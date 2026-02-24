@@ -1,0 +1,25 @@
+{
+    "name": "Gentle Slopes",
+    "description": "A relaxing intro level with rolling hills and friendly physics.",
+    "author": "CubeRunner Community",
+    "difficulty": "easy",
+    "bgColor": "#080820",
+    "spawn": { "x": 50, "y": 300 },
+    "bounds": { "left": -50, "right": 2200, "top": -400 },
+    "background": [
+        { "x": 300, "y": 80, "size": 100, "shape": "circle", "color": "#4488ff", "alpha": 0.03, "parallax": 0.1 },
+        { "x": 900, "y": 150, "size": 80, "shape": "circle", "color": "#44ff88", "alpha": 0.02, "parallax": 0.15 }
+    ],
+    "objects": [
+        { "type": "platform", "x": -50, "y": 350, "w": 300, "h": 40, "color": "#2a3a2a" },
+        { "type": "platform", "x": 300, "y": 370, "w": 200, "h": 40, "color": "#2a3a2a" },
+        { "type": "platform", "x": 550, "y": 350, "w": 200, "h": 40, "color": "#2a3a2a" },
+        { "type": "circle", "x": 400, "y": 330, "radius": 18, "color": "#66aa44" },
+        { "type": "circle", "x": 600, "y": 310, "radius": 22, "color": "#88cc66" },
+        { "type": "platform", "x": 820, "y": 330, "w": 150, "h": 20, "color": "#2a3a2a" },
+        { "type": "prop", "x": 850, "y": 290, "w": 35, "h": 35, "color": "#aa8844" },
+        { "type": "platform", "x": 1050, "y": 300, "w": 200, "h": 20, "color": "#2a3a2a" },
+        { "type": "platform", "x": 1320, "y": 330, "w": 180, "h": 30, "color": "#2a3a2a" },
+        { "type": "goal", "x": 1420, "y": 280, "w": 40, "h": 50 }
+    ]
+}

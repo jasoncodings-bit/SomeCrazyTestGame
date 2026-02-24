@@ -1,0 +1,39 @@
+{
+    "name": "Ball Pit Madness",
+    "description": "A room full of physics balls! Push through and find the exit.",
+    "author": "CubeRunner Community",
+    "difficulty": "medium",
+    "bgColor": "#0a0a18",
+    "spawn": { "x": 50, "y": 200 },
+    "bounds": { "left": -50, "right": 1500, "top": -300 },
+    "background": [
+        { "x": 400, "y": 100, "size": 120, "shape": "circle", "color": "#ff8800", "alpha": 0.03, "parallax": 0.1 },
+        { "x": 800, "y": 50, "size": 90, "shape": "circle", "color": "#ff4488", "alpha": 0.025, "parallax": 0.12 }
+    ],
+    "objects": [
+        { "type": "platform", "x": -50, "y": 400, "w": 1200, "h": 40, "color": "#2a2a3a" },
+        { "type": "platform", "x": -50, "y": 100, "w": 20, "h": 300, "color": "#2a2a3a" },
+        { "type": "platform", "x": 1130, "y": 100, "w": 20, "h": 300, "color": "#2a2a3a" },
+
+        { "type": "circle", "x": 150, "y": 350, "radius": 18, "color": "#ff6644" },
+        { "type": "circle", "x": 220, "y": 330, "radius": 22, "color": "#ff8866" },
+        { "type": "circle", "x": 300, "y": 360, "radius": 15, "color": "#ffaa44" },
+        { "type": "circle", "x": 380, "y": 340, "radius": 20, "color": "#ff6644" },
+        { "type": "circle", "x": 450, "y": 350, "radius": 17, "color": "#ff8866" },
+        { "type": "circle", "x": 530, "y": 330, "radius": 24, "color": "#ffaa44" },
+        { "type": "circle", "x": 600, "y": 360, "radius": 14, "color": "#ff6644" },
+        { "type": "circle", "x": 670, "y": 340, "radius": 21, "color": "#ff8866" },
+        { "type": "circle", "x": 740, "y": 350, "radius": 16, "color": "#ffaa44" },
+        { "type": "circle", "x": 810, "y": 330, "radius": 19, "color": "#ff6644" },
+        { "type": "circle", "x": 880, "y": 360, "radius": 23, "color": "#ff8866" },
+        { "type": "circle", "x": 950, "y": 340, "radius": 13, "color": "#ffaa44" },
+        { "type": "circle", "x": 250, "y": 280, "radius": 19, "color": "#ff4488" },
+        { "type": "circle", "x": 500, "y": 290, "radius": 16, "color": "#ff4488" },
+        { "type": "circle", "x": 750, "y": 270, "radius": 20, "color": "#ff4488" },
+
+        { "type": "prop", "x": 350, "y": 300, "w": 30, "h": 30, "color": "#c8a84e" },
+        { "type": "prop", "x": 650, "y": 310, "w": 25, "h": 25, "color": "#c8a84e" },
+
+        { "type": "goal", "x": 1060, "y": 350, "w": 40, "h": 50 }
+    ]
+}

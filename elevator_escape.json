@@ -1,0 +1,35 @@
+{
+    "name": "Elevator Escape",
+    "description": "Ride moving platforms to the top of the tower!",
+    "author": "CubeRunner Community",
+    "difficulty": "medium",
+    "bgColor": "#080812",
+    "spawn": { "x": 60, "y": 750 },
+    "bounds": { "left": -50, "right": 800, "top": -600 },
+    "background": [
+        { "x": 200, "y": 100, "size": 80, "shape": "circle", "color": "#5588cc", "alpha": 0.04, "parallax": 0.08 },
+        { "x": 500, "y": -200, "size": 120, "shape": "circle", "color": "#00c8ff", "alpha": 0.03, "parallax": 0.1 }
+    ],
+    "objects": [
+        { "type": "platform", "x": -50, "y": 800, "w": 250, "h": 40, "color": "#2a2a3a" },
+        { "type": "platform", "x": 450, "y": 800, "w": 250, "h": 40, "color": "#2a2a3a" },
+        { "type": "hazard", "x": 200, "y": 810, "w": 250, "h": 15, "color": "#ff3333" },
+
+        { "type": "moving_platform", "x": 100, "y": 700, "w": 80, "h": 15, "moveY": -200, "speed": 0.012, "color": "#5588cc" },
+        { "type": "platform", "x": 300, "y": 550, "w": 120, "h": 15, "color": "#333344" },
+        
+        { "type": "moving_platform", "x": 480, "y": 500, "w": 80, "h": 15, "moveY": -150, "speed": 0.015, "phase": 1.0, "color": "#5588cc" },
+        { "type": "platform", "x": 200, "y": 350, "w": 120, "h": 15, "color": "#333344" },
+
+        { "type": "prop", "x": 230, "y": 310, "w": 35, "h": 35, "color": "#c8a84e" },
+        { "type": "circle", "x": 300, "y": 320, "radius": 15, "color": "#e07030" },
+
+        { "type": "moving_platform", "x": 400, "y": 280, "w": 80, "h": 15, "moveX": 100, "speed": 0.018, "color": "#5588cc" },
+        { "type": "platform", "x": 100, "y": 150, "w": 150, "h": 15, "color": "#333344" },
+        
+        { "type": "bouncer", "x": 130, "y": 140, "w": 60, "h": 12, "bouncePower": -22 },
+        
+        { "type": "platform", "x": 350, "y": -50, "w": 200, "h": 20, "color": "#2a2a3a" },
+        { "type": "goal", "x": 420, "y": -100, "w": 40, "h": 50 }
+    ]
+}
