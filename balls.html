@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WASD Reflex</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --accent: #e94560;
+      --accent-glow: rgba(233, 69, 96, 0.4);
+      --success: #00d97e;
+      --success-glow: rgba(0, 217, 126, 0.4);
+      --fail: #ff4757;
+      --text: #eaeaea;
+      --muted: #6b6b8d;
+      --key-bg: #252540;
+      --key-border: #3a3a5c;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Background particles */
+    .bg-particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 50%;
+      opacity: 0.15;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(100vh) scale(1); opacity: 0; }
+      10% { opacity: 0.15; }
+      90% { opacity: 0.15; }
+      100% { transform: translateY(-10vh) scale(0.5); opacity: 0; }
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(135deg, var(--accent), #ff6b81, var(--accent));
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .header .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Score display */
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 16px;
+    }
+
+    .score-box {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--key-border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+
+    .score-box.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .score-box .label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .score-box .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .score-box .value.high-score {
+      color: #ffd32a;
+    }
+
+    /* Timer bar */
+    .timer-wrapper {
+      width: 100%;
+      height: 6px;
+      background: var(--surface);
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--key-border);
+    }
+
+    .timer-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #ff6b81);
+      border-radius: 3px;
+      width: 100%;
+      transition: width linear;
+    }
+
+    .timer-bar.warning {
+      background: linear-gradient(90deg, #ff4757, #ff6348);
+    }
+
+    .timer-bar.critical {
+      background: linear-gradient(90deg, #ff4757, #ff0000);
+      animation: pulse-bar 0.3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-bar {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Level / speed indicator */
+    .level-indicator {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .level-indicator span {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* WASD key grid */
+    .key-grid {
+      display: grid;
+      grid-template-areas:
+        ". w ."
+        "a s d";
+      grid-template-columns: repeat(3, 90px);
+      grid-template-rows: repeat(2, 90px);
+      gap: 10px;
+    }
+
+    .key-btn {
+      width: 90px;
+      height: 90px;
+      border-radius: 14px;
+      border: 2px solid var(--key-border);
+      background: var(--key-bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .key-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .key-btn:hover {
+      border-color: var(--muted);
+      transform: scale(1.03);
+    }
+
+    .key-btn:active {
+      transform: scale(0.95);
+    }
+
+    .key-btn[data-key="w"] { grid-area: w; }
+    .key-btn[data-key="a"] { grid-area: a; }
+    .key-btn[data-key="s"] { grid-area: s; }
+    .key-btn[data-key="d"] { grid-area: d; }
+
+    .key-btn.target {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, #2a1a2e, #1a1a2e);
+      box-shadow: 0 0 30px var(--accent-glow), inset 0 0 30px rgba(233, 69, 96, 0.1);
+      animation: target-pulse 0.8s ease-in-out infinite;
+    }
+
+    @keyframes target-pulse {
+      0%, 100% { box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px rgba(233, 69, 96, 0.05); }
+      50% { box-shadow: 0 0 40px var(--accent-glow), inset 0 0 40px rgba(233, 69, 96, 0.15); }
+    }
+
+    .key-btn.correct {
+      border-color: var(--success) !important;
+      box-shadow: 0 0 30px var(--success-glow) !important;
+      animation: none !important;
+      background: linear-gradient(135deg, #0a2e1a, #1a2e1a) !important;
+    }
+
+    .key-btn.wrong {
+      border-color: var(--fail) !important;
+      box-shadow: 0 0 30px rgba(255, 71, 87, 0.5) !important;
+      animation: shake 0.4s ease !important;
+      background: linear-gradient(135deg, #2e1a1a, #2e1a1a) !important;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+
+    /* Prompt text */
+    .prompt-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .prompt-text .press-key {
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 1.3rem;
+    }
+
+    /* Start / Game Over overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 15, 26, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      animation: fade-in 0.3s ease;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .overlay-content {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      animation: slide-up 0.4s ease;
+    }
+
+    @keyframes slide-up {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .overlay-content h2 {
+      font-size: 2.5rem;
+      font-weight: 900;
+    }
+
+    .overlay-content .final-score {
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .overlay-content .new-record {
+      color: #ffd32a;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      animation: glow-text 1s ease-in-out infinite;
+    }
+
+    @keyframes glow-text {
+      0%, 100% { text-shadow: 0 0 10px rgba(255, 211, 42, 0.5); }
+      50% { text-shadow: 0 0 25px rgba(255, 211, 42, 0.8); }
+    }
+
+    .overlay-content .stats-row {
+      display: flex;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .overlay-content .stats-row span {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .play-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 16px 48px;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      box-shadow: 0 4px 25px var(--accent-glow);
+    }
+
+    .play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 35px var(--accent-glow);
+    }
+
+    .play-btn:active {
+      transform: translateY(0);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    /* Combo indicator */
+    .combo {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-height: 24px;
+      transition: all 0.2s;
+    }
+
+    .combo.active {
+      color: #ffd32a;
+      text-shadow: 0 0 10px rgba(255, 211, 42, 0.4);
+    }
+
+    /* Score pop animation */
+    .score-pop {
+      position: fixed;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--success);
+      pointer-events: none;
+      z-index: 50;
+      animation: pop-up 0.6s ease forwards;
+    }
+
+    @keyframes pop-up {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-60px) scale(1.3); opacity: 0; }
+    }
+
+    /* ─── Chaos Effects ─── */
+
+    /* Decoy flash on non-target keys */
+    .key-btn.decoy {
+      border-color: #c73e57 !important;
+      box-shadow: 0 0 25px rgba(199, 62, 87, 0.35) !important;
+      background: linear-gradient(135deg, #261a2a, #1a1a2e) !important;
+    }
+
+    /* Snowflake layer */
+    .snow-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .snowflake {
+      position: absolute;
+      top: -30px;
+      color: white;
+      font-size: 1rem;
+      opacity: 0;
+      animation: snowfall linear forwards;
+      pointer-events: none;
+      filter: blur(0.5px);
+    }
+
+    @keyframes snowfall {
+      0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+      5%   { opacity: 0.7; }
+      95%  { opacity: 0.5; }
+      100% { transform: translateY(105vh) translateX(var(--drift, 30px)) rotate(360deg); opacity: 0; }
+    }
+
+    /* DVD bouncing logo */
+    .dvd-logo {
+      position: fixed;
+      z-index: 8;
+      pointer-events: none;
+      font-size: 1.4rem;
+      font-weight: 900;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 4px;
+      padding: 10px 18px;
+      border: 3px solid;
+      border-radius: 8px;
+      opacity: 0.85;
+      text-shadow: 0 0 15px currentColor;
+      box-shadow: 0 0 20px currentColor;
+      transition: color 0.01s, border-color 0.01s, text-shadow 0.3s, box-shadow 0.3s;
+    }
+
+    /* Screen wobble */
+    .game-container.wobble {
+      animation: wobble-anim 0.15s ease;
+    }
+
+    @keyframes wobble-anim {
+      0%   { transform: rotate(0deg) translate(0, 0); }
+      25%  { transform: rotate(-1.5deg) translate(-3px, 2px); }
+      50%  { transform: rotate(1deg) translate(2px, -2px); }
+      75%  { transform: rotate(-0.5deg) translate(-1px, 1px); }
+      100% { transform: rotate(0deg) translate(0, 0); }
+    }
+
+    /* Screen strobe flash */
+    .strobe-flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9;
+      opacity: 0;
+      animation: strobe 0.12s ease;
+    }
+
+    @keyframes strobe {
+      0%   { opacity: 0.25; }
+      100% { opacity: 0; }
+    }
+
+    /* Chaos unlock banner */
+    .chaos-banner {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 24px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      z-index: 60;
+      white-space: nowrap;
+      box-shadow: 0 0 30px var(--accent-glow);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .chaos-banner.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Active chaos indicator pills */
+    .chaos-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      min-height: 22px;
+    }
+
+    .chaos-pill {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(233, 69, 96, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      animation: pill-in 0.3s ease;
+    }
+
+    .chaos-pill.snow { background: rgba(100, 200, 255, 0.12); color: #7ecfff; border-color: rgba(100, 200, 255, 0.3); }
+    .chaos-pill.dvd { background: rgba(200, 100, 255, 0.12); color: #c88eff; border-color: rgba(200, 100, 255, 0.3); }
+    .chaos-pill.wobble { background: rgba(255, 200, 50, 0.12); color: #ffc832; border-color: rgba(255, 200, 50, 0.3); }
+    .chaos-pill.strobe { background: rgba(255, 80, 80, 0.12); color: #ff5050; border-color: rgba(255, 80, 80, 0.3); }
+
+    @keyframes pill-in {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* Responsive */
+    @media (max-width: 400px) {
+      .key-grid {
+        grid-template-columns: repeat(3, 72px);
+        grid-template-rows: repeat(2, 72px);
+        gap: 8px;
+      }
+      .key-btn {
+        width: 72px;
+        height: 72px;
+        font-size: 1.4rem;
+      }
+      .header h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background particles -->
+  <div class="bg-particles" id="particles"></div>
+
+  <!-- Chaos layers -->
+  <div class="snow-layer" id="snowLayer"></div>
+  <div class="dvd-logo" id="dvdLogo" style="display:none;">DVD</div>
+  <div class="chaos-banner" id="chaosBanner"></div>
+
+  <!-- Start overlay -->
+  <div class="overlay" id="startOverlay">
+    <div class="overlay-content">
+      <h2>WASD REFLEX</h2>
+      <p style="color: var(--muted); max-width: 300px; line-height: 1.6;">
+        Press the highlighted key before time runs out. It gets faster every round!
+      </p>
+      <button class="play-btn" id="startBtn">PLAY</button>
+      <p class="hint">or press any WASD key</p>
+    </div>
+  </div>
+
+  <!-- Game Over overlay -->
+  <div class="overlay hidden" id="gameOverOverlay">
+    <div class="overlay-content">
+      <h2>GAME OVER</h2>
+      <div class="final-score" id="finalScore">0</div>
+      <div class="new-record hidden" id="newRecord">★ NEW HIGH SCORE ★</div>
+      <div class="stats-row">
+        <div>Best Combo: <span id="bestComboStat">0</span></div>
+        <div>Speed: <span id="finalSpeed">1.0x</span></div>
+      </div>
+      <button class="play-btn" id="retryBtn">PLAY AGAIN</button>
+      <p class="hint">or press any WASD key</p>
+    </div>
+  </div>
+
+  <!-- Game UI -->
+  <div class="game-container">
+    <div class="header">
+      <h1>WASD REFLEX</h1>
+      <p class="subtitle">How fast can you react?</p>
+    </div>
+
+    <div class="score-bar">
+      <div class="score-box active">
+        <div class="label">Score</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="label">High Score</div>
+        <div class="value high-score" id="highScore">0</div>
+      </div>
+    </div>
+
+    <div class="timer-wrapper">
+      <div class="timer-bar" id="timerBar"></div>
+    </div>
+
+    <div class="level-indicator">Speed: <span id="speedLabel">1.0x</span></div>
+
+    <div class="prompt-text" id="prompt">
+      Press <span class="press-key" id="targetDisplay">-</span> now!
+    </div>
+
+    <div class="key-grid">
+      <button class="key-btn" data-key="w">W</button>
+      <button class="key-btn" data-key="a">A</button>
+      <button class="key-btn" data-key="s">S</button>
+      <button class="key-btn" data-key="d">D</button>
+    </div>
+
+    <div class="combo" id="combo"></div>
+    <div class="chaos-pills" id="chaosPills"></div>
+  </div>
+
+  <script>
+    // ─── State ───────────────────────────────────────────────
+    const KEYS = ['w', 'a', 's', 'd'];
+    const BASE_TIME = 2500;      // ms at start
+    const MIN_TIME = 500;        // fastest possible
+    const DECAY = 0.96;          // time multiplier per correct press
+    const STORAGE_KEY = 'wasd_reflex_high';
+
+    let score = 0;
+    let highScore = loadHighScore();
+    let currentTarget = null;
+    let timerInterval = null;
+    let timeLeft = 0;
+    let currentTime = BASE_TIME;
+    let comboCount = 0;
+    let bestCombo = 0;
+    let isPlaying = false;
+    let timerStart = 0;
+    let animFrame = null;
+
+    // ─── Chaos state ────────────────────────────────────────
+    const CHAOS = {
+      DECOY:   { threshold: 5,  label: '👻 Decoy Flash',  cls: '' },
+      SNOW:    { threshold: 10, label: '❄️ Snowfall',     cls: 'snow' },
+      DVD:     { threshold: 15, label: '📀 DVD Logo',     cls: 'dvd' },
+      WOBBLE:  { threshold: 20, label: '🌀 Screen Wobble', cls: 'wobble' },
+      STROBE:  { threshold: 25, label: '⚡ Strobe',       cls: 'strobe' },
+    };
+    let activeChaos = new Set();
+    let decoyTimers = [];
+    let snowInterval = null;
+    let dvdAnimFrame = null;
+    let dvdX = 100, dvdY = 100, dvdDX = 2, dvdDY = 1.5;
+    let dvdHue = 0;
+    let wobbleTimer = null;
+    let lastUnlocked = 0;
+
+    // ─── DOM refs ────────────────────────────────────────────
+    const $score = document.getElementById('score');
+    const $highScore = document.getElementById('highScore');
+    const $timerBar = document.getElementById('timerBar');
+    const $speedLabel = document.getElementById('speedLabel');
+    const $targetDisplay = document.getElementById('targetDisplay');
+    const $prompt = document.getElementById('prompt');
+    const $combo = document.getElementById('combo');
+    const $startOverlay = document.getElementById('startOverlay');
+    const $gameOverOverlay = document.getElementById('gameOverOverlay');
+    const $finalScore = document.getElementById('finalScore');
+    const $newRecord = document.getElementById('newRecord');
+    const $bestComboStat = document.getElementById('bestComboStat');
+    const $finalSpeed = document.getElementById('finalSpeed');
+    const keyBtns = document.querySelectorAll('.key-btn');
+    const $snowLayer = document.getElementById('snowLayer');
+    const $dvdLogo = document.getElementById('dvdLogo');
+    const $chaosBanner = document.getElementById('chaosBanner');
+    const $chaosPills = document.getElementById('chaosPills');
+    const $gameContainer = document.querySelector('.game-container');
+
+    // ─── Init ────────────────────────────────────────────────
+    $highScore.textContent = highScore;
+    createParticles();
+
+    // ─── Storage ─────────────────────────────────────────────
+    function loadHighScore() {
+      try { return parseInt(localStorage.getItem(STORAGE_KEY)) || 0; }
+      catch { return 0; }
+    }
+
+    function saveHighScore(val) {
+      try { localStorage.setItem(STORAGE_KEY, val); }
+      catch {}
+    }
+
+    // ─── Game flow ───────────────────────────────────────────
+    function startGame() {
+      score = 0;
+      comboCount = 0;
+      bestCombo = 0;
+      currentTime = BASE_TIME;
+      isPlaying = true;
+
+      stopAllChaos();
+
+      $score.textContent = '0';
+      $combo.textContent = '';
+      $combo.classList.remove('active');
+      $startOverlay.classList.add('hidden');
+      $gameOverOverlay.classList.add('hidden');
+
+      nextRound();
+    }
+
+    function nextRound() {
+      clearTimer();
+      clearKeyStates();
+      clearDecoys();
+
+      // pick a random key (avoid same twice in a row)
+      let next;
+      do { next = KEYS[Math.floor(Math.random() * 4)]; }
+      while (next === currentTarget && score > 0);
+      currentTarget = next;
+
+      // highlight target
+      const btn = document.querySelector(`.key-btn[data-key="${currentTarget}"]`);
+      btn.classList.add('target');
+      $targetDisplay.textContent = currentTarget.toUpperCase();
+
+      // activate chaos effects for this round
+      updateChaos();
+
+      // start timer
+      timeLeft = currentTime;
+      timerStart = performance.now();
+      $timerBar.style.transition = 'none';
+      $timerBar.style.width = '100%';
+      $timerBar.classList.remove('warning', 'critical');
+
+      // smooth timer bar
+      animFrame = requestAnimationFrame(tickTimer);
+
+      // timeout fallback
+      timerInterval = setTimeout(() => gameOver(), currentTime + 50);
+    }
+
+    function tickTimer(now) {
+      if (!isPlaying) return;
+      const elapsed = now - timerStart;
+      const pct = Math.max(0, 1 - elapsed / currentTime);
+      $timerBar.style.width = (pct * 100) + '%';
+
+      if (pct < 0.25) {
+        $timerBar.classList.add('critical');
+        $timerBar.classList.remove('warning');
+      } else if (pct < 0.5) {
+        $timerBar.classList.add('warning');
+        $timerBar.classList.remove('critical');
+      }
+
+      if (pct <= 0) {
+        gameOver();
+        return;
+      }
+      animFrame = requestAnimationFrame(tickTimer);
+    }
+
+    function handlePress(key) {
+      if (!isPlaying) return;
+
+      if (key === currentTarget) {
+        // Correct!
+        score++;
+        comboCount++;
+        if (comboCount > bestCombo) bestCombo = comboCount;
+
+        $score.textContent = score;
+        showScorePop(key);
+
+        // combo display
+        if (comboCount >= 3) {
+          $combo.textContent = `🔥 ${comboCount} combo!`;
+          $combo.classList.add('active');
+        }
+
+        // flash correct
+        const btn = document.querySelector(`.key-btn[data-key="${key}"]`);
+        btn.classList.remove('target');
+        btn.classList.add('correct');
+        setTimeout(() => btn.classList.remove('correct'), 200);
+
+        // increase speed
+        currentTime = Math.max(MIN_TIME, currentTime * DECAY);
+        $speedLabel.textContent = (BASE_TIME / currentTime).toFixed(1) + 'x';
+
+        // update high score live
+        if (score > highScore) {
+          highScore = score;
+          $highScore.textContent = highScore;
+          saveHighScore(highScore);
+        }
+
+        nextRound();
+      } else {
+        // Wrong key
+        comboCount = 0;
+        $combo.textContent = '';
+        $combo.classList.remove('active');
+
+        const btn = document.querySelector(`.key-btn[data-key="${key}"]`);
+        btn.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 400);
+
+        gameOver();
+      }
+    }
+
+    function gameOver() {
+      isPlaying = false;
+      clearTimer();
+      clearKeyStates();
+      stopAllChaos();
+
+      const isNewRecord = score >= highScore && score > 0;
+      if (isNewRecord) {
+        highScore = score;
+        $highScore.textContent = highScore;
+        saveHighScore(highScore);
+      }
+
+      $finalScore.textContent = score;
+      $bestComboStat.textContent = bestCombo;
+      $finalSpeed.textContent = (BASE_TIME / currentTime).toFixed(1) + 'x';
+      $newRecord.classList.toggle('hidden', !isNewRecord);
+      $gameOverOverlay.classList.remove('hidden');
+    }
+
+    function clearTimer() {
+      clearTimeout(timerInterval);
+      cancelAnimationFrame(animFrame);
+      timerInterval = null;
+    }
+
+    function clearKeyStates() {
+      keyBtns.forEach(b => b.classList.remove('target', 'correct', 'wrong'));
+    }
+
+    // ─── Score pop effect ────────────────────────────────────
+    function showScorePop(key) {
+      const btn = document.querySelector(`.key-btn[data-key="${key}"]`);
+      const rect = btn.getBoundingClientRect();
+      const pop = document.createElement('div');
+      pop.className = 'score-pop';
+      pop.textContent = comboCount >= 3 ? `+1 🔥` : '+1';
+      pop.style.left = rect.left + rect.width / 2 - 15 + 'px';
+      pop.style.top = rect.top - 10 + 'px';
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 600);
+    }
+
+    // ─── Input handling ──────────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (!KEYS.includes(key)) return;
+      e.preventDefault();
+
+      if (!isPlaying) {
+        startGame();
+        return;
+      }
+      handlePress(key);
+    });
+
+    keyBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        if (!isPlaying) {
+          startGame();
+          return;
+        }
+        handlePress(key);
+      });
+
+      // prevent double-tap zoom on mobile
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        btn.click();
+      });
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('retryBtn').addEventListener('click', startGame);
+
+    // ─── Chaos engine ─────────────────────────────────────
+    function updateChaos() {
+      for (const [key, cfg] of Object.entries(CHAOS)) {
+        if (score >= cfg.threshold && !activeChaos.has(key)) {
+          activeChaos.add(key);
+          showChaosBanner(cfg.label);
+          renderChaosPills();
+
+          // activate the effect
+          if (key === 'SNOW')   startSnow();
+          if (key === 'DVD')    startDVD();
+          if (key === 'WOBBLE') startWobble();
+        }
+      }
+
+      // run per-round effects
+      if (activeChaos.has('DECOY'))  triggerDecoys();
+      if (activeChaos.has('STROBE')) triggerStrobe();
+    }
+
+    // ── Chaos banner ──
+    function showChaosBanner(text) {
+      $chaosBanner.textContent = '⚠ ' + text + ' Unlocked!';
+      $chaosBanner.classList.add('show');
+      setTimeout(() => $chaosBanner.classList.remove('show'), 2000);
+    }
+
+    function renderChaosPills() {
+      $chaosPills.innerHTML = '';
+      for (const [key, cfg] of Object.entries(CHAOS)) {
+        if (activeChaos.has(key)) {
+          const pill = document.createElement('span');
+          pill.className = 'chaos-pill ' + cfg.cls;
+          pill.textContent = cfg.label;
+          $chaosPills.appendChild(pill);
+        }
+      }
+    }
+
+    // ── Decoy flashes ── (score 5+)
+    function triggerDecoys() {
+      // flash 1-2 wrong keys briefly at random delays
+      const nonTargets = KEYS.filter(k => k !== currentTarget);
+      const count = score >= 15 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const fakeKey = nonTargets[Math.floor(Math.random() * nonTargets.length)];
+        const delay = Math.random() * (currentTime * 0.6);
+        const dur = 200 + Math.random() * 300;
+        const t = setTimeout(() => {
+          if (!isPlaying) return;
+          const btn = document.querySelector(`.key-btn[data-key="${fakeKey}"]`);
+          if (btn && !btn.classList.contains('target')) {
+            btn.classList.add('decoy');
+            setTimeout(() => btn.classList.remove('decoy'), dur);
+          }
+        }, delay);
+        decoyTimers.push(t);
+      }
+    }
+
+    function clearDecoys() {
+      decoyTimers.forEach(t => clearTimeout(t));
+      decoyTimers = [];
+      keyBtns.forEach(b => b.classList.remove('decoy'));
+    }
+
+    // ── Snowfall ── (score 10+)
+    function startSnow() {
+      if (snowInterval) return;
+      snowInterval = setInterval(() => {
+        if (!isPlaying) return;
+        spawnSnowflake();
+      }, 300);
+    }
+
+    function spawnSnowflake() {
+      const flakes = ['❄', '❅', '❆', '✦', '•'];
+      const el = document.createElement('div');
+      el.className = 'snowflake';
+      el.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+      el.style.left = Math.random() * 100 + '%';
+      el.style.fontSize = (0.8 + Math.random() * 1.2) + 'rem';
+      el.style.animationDuration = (2 + Math.random() * 4) + 's';
+      // drift sideways
+      const drift = (Math.random() - 0.5) * 80;
+      el.style.setProperty('--drift', drift + 'px');
+      $snowLayer.appendChild(el);
+      setTimeout(() => el.remove(), 7000);
+    }
+
+    function stopSnow() {
+      clearInterval(snowInterval);
+      snowInterval = null;
+      $snowLayer.innerHTML = '';
+    }
+
+    // ── DVD Logo ── (score 15+)
+    function startDVD() {
+      $dvdLogo.style.display = 'block';
+      dvdX = Math.random() * (window.innerWidth - 120);
+      dvdY = Math.random() * (window.innerHeight - 60);
+      dvdDX = (1.5 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
+      dvdDY = (1.2 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
+      dvdHue = Math.random() * 360;
+      tickDVD();
+    }
+
+    function tickDVD() {
+      if (!isPlaying) { $dvdLogo.style.display = 'none'; return; }
+      const w = $dvdLogo.offsetWidth;
+      const h = $dvdLogo.offsetHeight;
+      dvdX += dvdDX;
+      dvdY += dvdDY;
+
+      let bounced = false;
+      if (dvdX <= 0 || dvdX + w >= window.innerWidth)  { dvdDX *= -1; bounced = true; }
+      if (dvdY <= 0 || dvdY + h >= window.innerHeight) { dvdDY *= -1; bounced = true; }
+      if (bounced) dvdHue = (dvdHue + 60 + Math.random() * 60) % 360;
+
+      dvdX = Math.max(0, Math.min(dvdX, window.innerWidth - w));
+      dvdY = Math.max(0, Math.min(dvdY, window.innerHeight - h));
+
+      const color = `hsl(${dvdHue}, 85%, 65%)`;
+      $dvdLogo.style.left = dvdX + 'px';
+      $dvdLogo.style.top = dvdY + 'px';
+      $dvdLogo.style.color = color;
+      $dvdLogo.style.borderColor = color;
+
+      // speed up with score
+      const speedMult = 1 + (score - 15) * 0.05;
+      dvdDX = Math.sign(dvdDX) * Math.min(Math.abs(dvdDX * 1.0003), 5 * speedMult);
+      dvdDY = Math.sign(dvdDY) * Math.min(Math.abs(dvdDY * 1.0003), 4 * speedMult);
+
+      dvdAnimFrame = requestAnimationFrame(tickDVD);
+    }
+
+    function stopDVD() {
+      cancelAnimationFrame(dvdAnimFrame);
+      $dvdLogo.style.display = 'none';
+    }
+
+    // ── Screen wobble ── (score 20+)
+    function startWobble() {
+      if (wobbleTimer) return;
+      wobbleTimer = setInterval(() => {
+        if (!isPlaying) return;
+        $gameContainer.classList.add('wobble');
+        setTimeout(() => $gameContainer.classList.remove('wobble'), 200);
+      }, 800 + Math.random() * 600);
+    }
+
+    function stopWobble() {
+      clearInterval(wobbleTimer);
+      wobbleTimer = null;
+      $gameContainer.classList.remove('wobble');
+    }
+
+    // ── Strobe ── (score 25+)
+    function triggerStrobe() {
+      if (Math.random() > 0.5) return; // only sometimes
+      const delay = Math.random() * currentTime * 0.7;
+      const t = setTimeout(() => {
+        if (!isPlaying) return;
+        const flash = document.createElement('div');
+        flash.className = 'strobe-flash';
+        const colors = [
+          'rgba(233,69,96,0.18)',
+          'rgba(100,200,255,0.15)',
+          'rgba(255,211,42,0.12)',
+          'rgba(0,217,126,0.15)',
+          'rgba(200,100,255,0.15)'
+        ];
+        flash.style.background = colors[Math.floor(Math.random() * colors.length)];
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 150);
+      }, delay);
+      decoyTimers.push(t); // reuse for cleanup
+    }
+
+    // ── Stop all chaos ──
+    function stopAllChaos() {
+      clearDecoys();
+      stopSnow();
+      stopDVD();
+      stopWobble();
+      activeChaos.clear();
+      $chaosPills.innerHTML = '';
+      $chaosBanner.classList.remove('show');
+    }
+
+    // ─── Particles ───────────────────────────────────────────
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (6 + Math.random() * 10) + 's';
+        p.style.animationDelay = Math.random() * 8 + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+        container.appendChild(p);
+      }
+    }
+  </script>
+</body>
+</html>
