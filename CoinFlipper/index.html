@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binary Chaos Generator | 100 Bits</title>
+<style>
+  * { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+  }
+
+  body {
+    font-family: 'Courier New', Consolas, Monaco, monospace;
+    background: linear-gradient(135deg, #0a0a0a 0%, #001a00 100%);
+    color: #00ff00;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Scanline effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.15),
+      rgba(0, 0, 0, 0.15) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Flickering glow effect */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(0, 255, 0, 0.03) 0%, transparent 70%);
+    pointer-events: none;
+    animation: flicker 3s infinite;
+    z-index: 1;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
+  .container {
+    max-width: 1200px;
+    width: 100%;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ═══ HEADER ═══ */
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, #00ff00 0%, #00ff88 50%, #00ffff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    font-family: 'Courier New', monospace;
+  }
+
+  .subtitle {
+    color: #00aa00;
+    font-size: 1rem;
+    font-weight: 500;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    letter-spacing: 1px;
+  }
+
+  /* ═══ CONTROLS ═══ */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+
+  .btn {
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.3s ease;
+  }
+
+  .btn:hover::before {
+    left: 100%;
+  }
+
+  .btn:active {
+    transform: scale(0.96);
+  }
+
+  #flipBtn {
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: #000000;
+    box-shadow: 0 8px 24px rgba(0, 255, 0, 0.4);
+    border: 1px solid #00ff00;
+  }
+
+  #flipBtn:hover {
+    box-shadow: 0 12px 32px rgba(0, 255, 0, 0.8), 0 0 40px rgba(0, 255, 0, 0.4);
+    transform: translateY(-2px);
+  }
+
+  #autoBtn {
+    background: linear-gradient(135deg, #00ffff, #0088ff);
+    color: #000;
+    box-shadow: 0 8px 24px rgba(0, 255, 255, 0.4);
+    border: 1px solid #00ffff;
+  }
+
+  #autoBtn:hover {
+    box-shadow: 0 12px 32px rgba(0, 255, 255, 0.8);
+    transform: translateY(-2px);
+  }
+
+  #autoBtn.active {
+    background: linear-gradient(135deg, #ff0000, #cc0000);
+    animation: pulse 1.5s ease-in-out infinite;
+    border: 1px solid #ff0000;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(255, 0, 0, 0.6), 0 0 30px rgba(255, 0, 0, 0.3); }
+    50% { box-shadow: 0 8px 32px rgba(255, 0, 0, 1), 0 0 50px rgba(255, 0, 0, 0.5); }
+  }
+
+  #resetBtn {
+    background: linear-gradient(135deg, #ff0000, #880000);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(255, 0, 0, 0.3);
+    border: 1px solid #ff0000;
+  }
+
+  #resetBtn:hover {
+    box-shadow: 0 12px 32px rgba(255, 0, 0, 0.6), 0 0 40px rgba(255, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 255, 0, 0.05);
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 0, 0.2);
+  }
+
+  .speed-control label {
+    font-size: 0.9rem;
+    color: #00ff00;
+    font-weight: 600;
+  }
+
+  .speed-control input {
+    width: 120px;
+    accent-color: #00ff00;
+  }
+
+  .speed-control input[type="range"]::-webkit-slider-thumb {
+    background: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  }
+
+  .speed-control input[type="range"]::-moz-range-thumb {
+    background: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  }
+
+  .speed-control span {
+    color: #00ffff;
+    font-weight: 700;
+    min-width: 60px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+
+  /* ═══ STATS ═══ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: rgba(0, 255, 0, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 0, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 0, 0.3);
+    border-color: rgba(0, 255, 0, 0.4);
+  }
+
+  .stat-card .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #00aa00;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .stat-card .value {
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .value.heads { color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
+  .value.tails { color: #ff0000; text-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+  .value.neutral { color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.3); }
+  .value.record { 
+    background: linear-gradient(135deg, #00ff00, #00ffff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ═══ COIN GRID ═══ */
+  .coin-container {
+    background: rgba(0, 255, 0, 0.03);
+    border: 1px solid rgba(0, 255, 0, 0.2);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+  }
+
+  .coin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 48px);
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .coin {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1rem;
+    cursor: default;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .coin.empty {
+    background: rgba(0, 255, 0, 0.05);
+    border: 2px dashed rgba(0, 255, 0, 0.3);
+    color: rgba(0, 255, 0, 0.3);
+    font-family: 'Courier New', monospace;
+  }
+
+  .coin.heads {
+    background: linear-gradient(145deg, #00ff00, #00aa00);
+    color: #000000;
+    box-shadow: 0 4px 16px rgba(0, 255, 0, 0.6);
+    border: 1px solid #00ff00;
+  }
+
+  .coin.tails {
+    background: linear-gradient(145deg, #ff0000, #aa0000);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(255, 0, 0, 0.6);
+    border: 1px solid #ff0000;
+  }
+
+  .coin.streak-highlight {
+    animation: streakPulse 1.5s ease-in-out infinite;
+    transform: scale(1.15);
+    z-index: 10;
+  }
+
+  @keyframes streakPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 4px rgba(0, 255, 255, 0.8), 0 0 20px 8px rgba(0, 255, 255, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(0, 255, 255, 1), 0 0 30px 12px rgba(0, 255, 255, 0.8);
+    }
+  }
+
+  .coin.flip-anim {
+    animation: coinFlip 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  @keyframes coinFlip {
+    0% { 
+      transform: rotateY(0deg) scale(0.7); 
+      opacity: 0;
+      filter: blur(4px);
+    }
+    30% { 
+      transform: rotateY(180deg) scale(1.3); 
+      opacity: 0.5;
+      filter: blur(2px);
+    }
+    60% { 
+      transform: rotateY(540deg) scale(0.9); 
+      opacity: 0.8;
+      filter: blur(1px);
+    }
+    100% { 
+      transform: rotateY(720deg) scale(1); 
+      opacity: 1;
+      filter: blur(0px);
+    }
+  }
+
+  /* ═══ STREAKS ═══ */
+  .streaks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .streak-card {
+    background: rgba(0, 255, 0, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 0, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+  }
+
+  .streak-card h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+
+  .streak-card.heads h3 { color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
+  .streak-card.tails h3 { color: #ff0000; text-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+
+  .streak-visual {
+    position: relative;
+    height: 16px;
+    background: rgba(0, 255, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 1px solid rgba(0, 255, 0, 0.1);
+  }
+
+  .streak-bar {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+
+  .streak-bar.heads-bar {
+    background: linear-gradient(90deg, #00ff00, #00aa00);
+    box-shadow: 0 0 12px rgba(0, 255, 0, 0.8);
+  }
+
+  .streak-bar.tails-bar {
+    background: linear-gradient(90deg, #ff0000, #aa0000);
+    box-shadow: 0 0 12px rgba(255, 0, 0, 0.8);
+  }
+
+  .streak-info {
+    font-size: 0.85rem;
+    color: #00aa00;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .streak-count {
+    font-size: 1.4rem;
+    font-weight: 900;
+  }
+
+  .streak-card.heads .streak-count { color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.6); }
+  .streak-card.tails .streak-count { color: #ff0000; text-shadow: 0 0 15px rgba(255, 0, 0, 0.6); }
+
+  /* ═══ ALL-TIME RECORDS ═══ */
+  .records {
+    background: rgba(0, 255, 0, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 0, 0.2);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);
+  }
+
+  .records h2 {
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #00ff00, #00ffff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .records-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+  }
+
+  .record-item {
+    text-align: center;
+    padding: 16px;
+    background: rgba(0, 255, 0, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 0, 0.15);
+  }
+
+  .record-item .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #00aa00;
+    margin-bottom: 8px;
+  }
+
+  .record-item .value {
+    font-size: 1.8rem;
+    font-weight: 900;
+  }
+
+  /* ═══ HISTORY ═══ */
+  .history {
+    background: rgba(0, 255, 0, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 0, 0.2);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);
+  }
+
+  .history h2 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #00ff00;
+    margin-bottom: 20px;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  }
+
+  .history-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .history-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .history-list::-webkit-scrollbar-track {
+    background: rgba(0, 255, 0, 0.05);
+    border-radius: 4px;
+  }
+
+  .history-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 0, 0.3);
+    border-radius: 4px;
+  }
+
+  .history-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 0, 0.5);
+  }
+
+  .history-entry {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 255, 0, 0.05);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 255, 0, 0.1);
+  }
+
+  .history-entry:hover {
+    background: rgba(0, 255, 0, 0.1);
+    transform: translateX(4px);
+    border-color: rgba(0, 255, 0, 0.3);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+  }
+
+  .history-entry .round {
+    color: #00ffff;
+    font-weight: 700;
+  }
+
+  .history-entry .counts {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .history-entry .h-count {
+    color: #00ff00;
+    font-weight: 700;
+  }
+
+  .history-entry .t-count {
+    color: #ff0000;
+    font-weight: 700;
+  }
+
+  .history-entry .streaks {
+    color: #00aa00;
+    font-size: 0.85rem;
+  }
+
+  .history-entry .badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge.record-h {
+    background: linear-gradient(135deg, #00ff00, #00aa00);
+    color: #000000;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  }
+
+  .badge.record-t {
+    background: linear-gradient(135deg, #ff0000, #aa0000);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  }
+
+  .badge.perfect {
+    background: linear-gradient(135deg, #00ffff, #0088ff);
+    color: #000;
+    animation: shimmer 2s infinite;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  }
+
+  .badge.rare {
+    background: linear-gradient(135deg, #ffff00, #ff8800);
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+  }
+
+  @keyframes shimmer {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+  }
+
+  /* ═══ RESPONSIVE ═══ */
+  @media (max-width: 768px) {
+    .controls {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+
+    .speed-control {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .coin-grid {
+      grid-template-columns: repeat(auto-fill, 40px);
+      gap: 6px;
+    }
+
+    .coin {
+      width: 40px;
+      height: 40px;
+      font-size: 0.85rem;
+    }
+  }
+
+  /* ═══ UTILITIES ═══ */
+  .hidden {
+    display: none !important;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <header>
+    <h1>⚡ BINARY CHAOS GENERATOR</h1>
+    <p class="subtitle">[ 100 BITS ] • TRACK SEQUENCES • BREAK ENTROPY</p>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button id="flipBtn" class="btn">GENERATE 100 BITS</button>
+    <button id="autoBtn" class="btn">AUTO HACK</button>
+    <button id="resetBtn" class="btn">PURGE DATA</button>
+    <div class="speed-control">
+      <label for="speedSlider">Speed:</label>
+      <input type="range" id="speedSlider" min="0.1" max="2000" value="500" step="0.1">
+      <span id="speedValue">0.5s</span>
+    </div>
+  </div>
+
+  <!-- CURRENT STATS -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="label">ZEROS [0]</div>
+      <div class="value heads" id="headsCount">—</div>
+      <div class="label" style="font-size: 0.6rem; margin-top: 4px; color: #ffd93d;" id="headsPercent"></div>
+    </div>
+    <div class="stat-card">
+      <div class="label">ONES [1]</div>
+      <div class="value tails" id="tailsCount">—</div>
+      <div class="label" style="font-size: 0.6rem; margin-top: 4px; color: #667eea;" id="tailsPercent"></div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Best 0 Streak</div>
+      <div class="value heads" id="bestHStreak">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Best 1 Streak</div>
+      <div class="value tails" id="bestTStreak">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">CYCLE</div>
+      <div class="value neutral" id="roundCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">BITS/SEC</div>
+      <div class="value neutral" id="flipsPerSec">—</div>
+    </div>
+  </div>
+
+  <!-- COIN GRID -->
+  <div class="coin-container">
+    <div class="coin-grid" id="coinGrid"></div>
+  </div>
+
+  <!-- CURRENT STREAKS -->
+  <div class="streaks hidden" id="streakSection">
+    <div class="streak-card heads">
+      <h3>� LONGEST ZERO SEQUENCE</h3>
+      <div class="streak-visual">
+        <div class="streak-bar heads-bar" id="headsBar"></div>
+      </div>
+      <div class="streak-info">
+        <span class="streak-count" id="headsStreakCount">0</span>
+        <span id="headsStreakDetail">—</span>
+      </div>
+    </div>
+    <div class="streak-card tails">
+      <h3>🔴 LONGEST ONE SEQUENCE</h3>
+      <div class="streak-visual">
+        <div class="streak-bar tails-bar" id="tailsBar"></div>
+      </div>
+      <div class="streak-info">
+        <span class="streak-count" id="tailsStreakCount">0</span>
+        <span id="tailsStreakDetail">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL-TIME RECORDS -->
+  <div class="records hidden" id="recordsSection">
+    <h2>🏆 SYSTEM RECORDS</h2>
+    <div class="records-grid">
+      <div class="record-item">
+        <div class="label">Best Zero Sequence</div>
+        <div class="value record" id="recordHeadsStreak">0</div>
+      </div>
+      <div class="record-item">
+        <div class="label">Best One Sequence</div>
+        <div class="value record" id="recordTailsStreak">0</div>
+      </div>
+      <div class="record-item">
+        <div class="label">Total Zeros</div>
+        <div class="value heads" id="totalHeads">0</div>
+      </div>
+      <div class="record-item">
+        <div class="label">Total Ones</div>
+        <div class="value tails" id="totalTails">0</div>
+      </div>
+      <div class="record-item">
+        <div class="label">Total Bits</div>
+        <div class="value neutral" id="totalCoins">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history hidden" id="historySection">
+    <h2>📊 EXECUTION LOG</h2>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  COIN FLIPPER PRO - Main JavaScript
+// ═══════════════════════════════════════════════════════
+
+const CONFIG = {
+  COIN_COUNT: 100,
+  DEFAULT_SPEED: 500,
+  ANIMATION_STAGGER: 6,
+};
+
+// State
+const state = {
+  round: 0,
+  autoInterval: null,
+  isAutoRunning: false,
+  autoSpeed: CONFIG.DEFAULT_SPEED,
+  allTimeData: {
+    bestHeadsStreak: 0,
+    bestTailsStreak: 0,
+    totalHeads: 0,
+    totalTails: 0,
+  },
+};
+
+// DOM Elements
+const elements = {
+  flipBtn: document.getElementById('flipBtn'),
+  autoBtn: document.getElementById('autoBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  speedSlider: document.getElementById('speedSlider'),
+  speedValue: document.getElementById('speedValue'),
+  coinGrid: document.getElementById('coinGrid'),
+  headsCount: document.getElementById('headsCount'),
+  tailsCount: document.getElementById('tailsCount'),
+  bestHStreak: document.getElementById('bestHStreak'),
+  bestTStreak: document.getElementById('bestTStreak'),
+  roundCount: document.getElementById('roundCount'),
+  streakSection: document.getElementById('streakSection'),
+  headsBar: document.getElementById('headsBar'),
+  tailsBar: document.getElementById('tailsBar'),
+  headsStreakCount: document.getElementById('headsStreakCount'),
+  tailsStreakCount: document.getElementById('tailsStreakCount'),
+  headsStreakDetail: document.getElementById('headsStreakDetail'),
+  tailsStreakDetail: document.getElementById('tailsStreakDetail'),
+  headsPercent: document.getElementById('headsPercent'),
+  tailsPercent: document.getElementById('tailsPercent'),
+  flipsPerSec: document.getElementById('flipsPerSec'),
+  recordsSection: document.getElementById('recordsSection'),
+  recordHeadsStreak: document.getElementById('recordHeadsStreak'),
+  recordTailsStreak: document.getElementById('recordTailsStreak'),
+  totalHeads: document.getElementById('totalHeads'),
+  totalTails: document.getElementById('totalTails'),
+  totalCoins: document.getElementById('totalCoins'),
+  historySection: document.getElementById('historySection'),
+  historyList: document.getElementById('historyList'),
+};
+
+// ═══ INITIALIZATION ═══
+function init() {
+  createCoinGrid();
+  attachEventListeners();
+  loadSavedData();
+}
+
+function createCoinGrid() {
+  for (let i = 0; i < CONFIG.COIN_COUNT; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'coin empty';
+    coin.textContent = '?';
+    coin.dataset.index = i;
+    elements.coinGrid.appendChild(coin);
+  }
+}
+
+function attachEventListeners() {
+  elements.flipBtn.addEventListener('click', flipCoins);
+  elements.autoBtn.addEventListener('click', toggleAutoFlip);
+  elements.resetBtn.addEventListener('click', resetAll);
+  elements.speedSlider.addEventListener('input', updateSpeed);
+}
+
+function loadSavedData() {
+  const saved = localStorage.getItem('coinFlipperData');
+  if (saved) {
+    const data = JSON.parse(saved);
+    state.allTimeData = data.allTimeData;
+    state.round = data.round;
+    updateRecordsDisplay();
+  }
+}
+
+function saveData() {
+  localStorage.setItem('coinFlipperData', JSON.stringify({
+    allTimeData: state.allTimeData,
+    round: state.round,
+  }));
+}
+
+// ═══ CORE LOGIC ═══
+function flipCoins() {
+  state.round++;
+  
+  // Generate random results
+  const results = Array.from({ length: CONFIG.COIN_COUNT }, 
+    () => Math.random() < 0.5 ? '0' : '1'
+  );
+  
+  // Count zeros and ones
+  const headsCount = results.filter(r => r === '0').length;
+  const tailsCount = CONFIG.COIN_COUNT - headsCount;
+  
+  // Find streaks
+  const streakData = findLongestStreaks(results);
+  
+  // Update UI
+  animateCoins(results);
+  updateStats(headsCount, tailsCount, streakData);
+  highlightStreaks(streakData);
+  updateAllTimeRecords(headsCount, tailsCount, streakData);
+  addHistoryEntry(headsCount, tailsCount, streakData);
+  
+  // Save progress
+  saveData();
+}
+
+function findLongestStreaks(results) {
+  let bestHeads = { length: 0, startIndex: 0 };
+  let bestTails = { length: 0, startIndex: 0 };
+  let currentHeads = { length: 0, startIndex: 0 };
+  let currentTails = { length: 0, startIndex: 0 };
+  
+  results.forEach((result, i) => {
+    if (result === '0') {
+      if (currentHeads.length === 0) currentHeads.startIndex = i;
+      currentHeads.length++;
+      if (currentHeads.length > bestHeads.length) {
+        bestHeads = { ...currentHeads };
+      }
+      currentTails = { length: 0, startIndex: 0 };
+    } else {
+      if (currentTails.length === 0) currentTails.startIndex = i;
+      currentTails.length++;
+      if (currentTails.length > bestTails.length) {
+        bestTails = { ...currentTails };
+      }
+      currentHeads = { length: 0, startIndex: 0 };
+    }
+  });
+  
+  return {
+    heads: bestHeads,
+    tails: bestTails,
+  };
+}
+
+function animateCoins(results) {
+  const coins = elements.coinGrid.querySelectorAll('.coin');
+  
+  coins.forEach((coin, i) => {
+    const delay = i * CONFIG.ANIMATION_STAGGER;
+    
+    setTimeout(() => {
+      coin.classList.remove('empty', 'heads', 'tails', 'streak-highlight');
+      coin.classList.add('flip-anim');
+      
+      const result = results[i];
+      coin.classList.add(result === '0' ? 'heads' : 'tails');
+      coin.textContent = result;
+      
+      setTimeout(() => {
+        coin.classList.remove('flip-anim');
+      }, 600);
+    }, delay);
+  });
+}
+
+function highlightStreaks(streakData) {
+  const coins = elements.coinGrid.querySelectorAll('.coin');
+  const totalDelay = CONFIG.COIN_COUNT * CONFIG.ANIMATION_STAGGER + 600;
+  
+  setTimeout(() => {
+    // Highlight heads streak
+    for (let i = 0; i < streakData.heads.length; i++) {
+      const index = streakData.heads.startIndex + i;
+      coins[index]?.classList.add('streak-highlight');
+    }
+    
+    // Highlight tails streak
+    for (let i = 0; i < streakData.tails.length; i++) {
+      const index = streakData.tails.startIndex + i;
+      coins[index]?.classList.add('streak-highlight');
+    }
+  }, totalDelay);
+}
+
+function updateStats(headsCount, tailsCount, streakData) {
+  elements.headsCount.textContent = headsCount;
+  elements.tailsCount.textContent = tailsCount;
+  elements.bestHStreak.textContent = streakData.heads.length;
+  elements.bestTStreak.textContent = streakData.tails.length;
+  elements.roundCount.textContent = state.round;
+  
+  // Update percentages
+  const headsPercentDisplay = ((headsCount / CONFIG.COIN_COUNT) * 100).toFixed(1);
+  const tailsPercentDisplay = ((tailsCount / CONFIG.COIN_COUNT) * 100).toFixed(1);
+  elements.headsPercent.textContent = `${headsPercentDisplay}%`;
+  elements.tailsPercent.textContent = `${tailsPercentDisplay}%`;
+  
+  // Update flips per second
+  if (state.autoSpeed) {
+    const flipsPerSec = ((CONFIG.COIN_COUNT / state.autoSpeed) * 1000).toFixed(1);
+    elements.flipsPerSec.textContent = flipsPerSec;
+  }
+  
+  // Show streak section
+  elements.streakSection.classList.remove('hidden');
+  elements.streakSection.classList.add('fade-in');
+  
+  // Update streak bars
+  const headsPercent = (streakData.heads.length / CONFIG.COIN_COUNT) * 100;
+  const tailsPercent = (streakData.tails.length / CONFIG.COIN_COUNT) * 100;
+  
+  elements.headsBar.style.width = `${headsPercent}%`;
+  elements.tailsBar.style.width = `${tailsPercent}%`;
+  
+  elements.headsStreakCount.textContent = streakData.heads.length;
+  elements.tailsStreakCount.textContent = streakData.tails.length;
+  
+  const headsEnd = streakData.heads.startIndex + streakData.heads.length;
+  const tailsEnd = streakData.tails.startIndex + streakData.tails.length;
+  
+  elements.headsStreakDetail.textContent = 
+    streakData.heads.length > 0 
+      ? `#${streakData.heads.startIndex + 1}–${headsEnd}` 
+      : '—';
+  
+  elements.tailsStreakDetail.textContent = 
+    streakData.tails.length > 0 
+      ? `#${streakData.tails.startIndex + 1}–${tailsEnd}` 
+      : '—';
+}
+
+function updateAllTimeRecords(headsCount, tailsCount, streakData) {
+  const records = state.allTimeData;
+  
+  // Check for new records
+  const newHeadsRecord = streakData.heads.length > records.bestHeadsStreak;
+  const newTailsRecord = streakData.tails.length > records.bestTailsStreak;
+  
+  // Update records
+  records.bestHeadsStreak = Math.max(records.bestHeadsStreak, streakData.heads.length);
+  records.bestTailsStreak = Math.max(records.bestTailsStreak, streakData.tails.length);
+  records.totalHeads += headsCount;
+  records.totalTails += tailsCount;
+  
+  updateRecordsDisplay();
+  
+  return { newHeadsRecord, newTailsRecord };
+}
+
+function updateRecordsDisplay() {
+  elements.recordsSection.classList.remove('hidden');
+  elements.recordsSection.classList.add('fade-in');
+  
+  const records = state.allTimeData;
+  elements.recordHeadsStreak.textContent = records.bestHeadsStreak;
+  elements.recordTailsStreak.textContent = records.bestTailsStreak;
+  elements.totalHeads.textContent = records.totalHeads.toLocaleString();
+  elements.totalTails.textContent = records.totalTails.toLocaleString();
+  elements.totalCoins.textContent = (records.totalHeads + records.totalTails).toLocaleString();
+}
+
+function addHistoryEntry(headsCount, tailsCount, streakData) {
+  elements.historySection.classList.remove('hidden');
+  elements.historySection.classList.add('fade-in');
+  
+  const records = state.allTimeData;
+  const newHeadsRecord = streakData.heads.length >= records.bestHeadsStreak && streakData.heads.length > 0;
+  const newTailsRecord = streakData.tails.length >= records.bestTailsStreak && streakData.tails.length > 0;
+  const isPerfectSplit = headsCount === 50;
+  const isExtremelyRare = headsCount <= 30 || headsCount >= 70;
+  
+  const entry = document.createElement('div');
+  entry.className = 'history-entry fade-in';
+  
+  let badges = '';
+  if (isPerfectSplit) badges += '<span class="badge perfect">✨ Perfect Balance!</span>';
+  if (isExtremelyRare) badges += '<span class="badge rare">⚠ Anomaly Detected!</span>';
+  if (newHeadsRecord) badges += '<span class="badge record-h">💚 [0] Record!</span>';
+  if (newTailsRecord) badges += '<span class="badge record-t">🔴 [1] Record!</span>';
+  
+  entry.innerHTML = `
+    <div class="round">#${state.round}</div>
+    <div class="counts">
+      <span class="h-count">${headsCount}×[0]</span>
+      <span class="t-count">${tailsCount}×[1]</span>
+      <span class="streaks">SEQ: 0×${streakData.heads.length} | 1×${streakData.tails.length}</span>
+    </div>
+    <div class="badges">${badges}</div>
+  `;
+  
+  elements.historyList.insertBefore(entry, elements.historyList.firstChild);
+  
+  // Limit history to 50 entries
+  const entries = elements.historyList.querySelectorAll('.history-entry');
+  if (entries.length > 50) {
+    entries[entries.length - 1].remove();
+  }
+}
+
+// ═══ AUTO FLIP ═══
+function toggleAutoFlip() {
+  if (state.isAutoRunning) {
+    stopAutoFlip();
+  } else {
+    startAutoFlip();
+  }
+}
+
+function startAutoFlip() {
+  state.isAutoRunning = true;
+  elements.autoBtn.classList.add('active');
+  elements.autoBtn.textContent = 'STOP HACK';
+  
+  flipCoins(); // Immediate first flip
+  state.autoInterval = setInterval(flipCoins, state.autoSpeed);
+}
+
+function stopAutoFlip() {
+  state.isAutoRunning = false;
+  elements.autoBtn.classList.remove('active');
+  elements.autoBtn.textContent = 'AUTO HACK';
+  
+  if (state.autoInterval) {
+    clearInterval(state.autoInterval);
+    state.autoInterval = null;
+  }
+}
+
+function updateSpeed() {
+  const speed = parseFloat(elements.speedSlider.value);
+  state.autoSpeed = speed;
+  
+  // Display in ms if under 100ms, otherwise in seconds
+  if (speed < 1) {
+    elements.speedValue.textContent = `${speed.toFixed(1)}ms`;
+  } else if (speed < 100) {
+    elements.speedValue.textContent = `${speed.toFixed(0)}ms`;
+  } else {
+    elements.speedValue.textContent = `${(speed / 1000).toFixed(2)}s`;
+  }
+  
+  // Restart auto if running
+  if (state.isAutoRunning) {
+    clearInterval(state.autoInterval);
+    state.autoInterval = setInterval(flipCoins, state.autoSpeed);
+  }
+}
+
+// ═══ RESET ═══
+function resetAll() {
+  if (!confirm('>>> PURGE ALL DATA? This will erase all execution logs and records! <<<')) {
+    return;
+  }
+  
+  // Stop auto flip
+  if (state.isAutoRunning) {
+    stopAutoFlip();
+  }
+  
+  // Reset state
+  state.round = 0;
+  state.allTimeData = {
+    bestHeadsStreak: 0,
+    bestTailsStreak: 0,
+    totalHeads: 0,
+    totalTails: 0,
+  };
+  
+  // Clear UI
+  elements.headsCount.textContent = '—';
+  elements.tailsCount.textContent = '—';
+  elements.bestHStreak.textContent = '—';
+  elements.bestTStreak.textContent = '—';
+  elements.roundCount.textContent = '0';
+  
+  elements.streakSection.classList.add('hidden');
+  elements.recordsSection.classList.add('hidden');
+  elements.historySection.classList.add('hidden');
+  elements.historyList.innerHTML = '';
+  
+  // Reset coins
+  const coins = elements.coinGrid.querySelectorAll('.coin');
+  coins.forEach(coin => {
+    coin.className = 'coin empty';
+    coin.textContent = '?';
+  });
+  
+  // Clear saved data
+  localStorage.removeItem('coinFlipperData');
+}
+
+// ═══ START APPLICATION ═══
+init();
+</script>
+
+</body>
+</html>
