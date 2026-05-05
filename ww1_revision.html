@@ -1,0 +1,991 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WW1 Revision Tool</title>
+<style>
+:root{--gold:#d4a017;--blue:#2563a8;--green:#1e8c4a;--red:#b91c1c;--orange:#c2710c;--cream:#f6f1e9;--dark:#1e1e1e;--light-blue:#dbeafe;--light-green:#dcfce7;--light-red:#fee2e2;--light-yellow:#fef9c3;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#111827;color:#1e1e1e;min-height:100vh;font-size:15px;}
+
+/* NAV */
+nav{background:#0a0f1e;padding:10px 20px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:100;}
+nav .site-title{color:var(--gold);font-size:1rem;font-weight:700;letter-spacing:1px;margin-right:12px;flex:1 0 100%;}
+@media(min-width:620px){nav .site-title{flex:0 0 auto;}}
+nav button{background:#1e2540;color:#bbb;border:1px solid #333;padding:7px 14px;border-radius:5px;cursor:pointer;font-size:0.82rem;font-weight:600;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px;}
+nav button:hover,nav button.active{background:var(--gold);color:#000;border-color:var(--gold);}
+
+/* LAYOUT */
+.section{display:none;padding:20px;max-width:960px;margin:0 auto;}
+.section.active{display:block;}
+.page-title{color:var(--gold);font-size:1.35rem;font-weight:700;margin-bottom:4px;border-bottom:2px solid #2a2a2a;padding-bottom:8px;}
+.page-sub{color:#9ca3af;font-size:0.88rem;margin:8px 0 20px;}
+
+/* HOME */
+.welcome-banner{background:linear-gradient(135deg,#1a2e50,#0a0f1e);border:1px solid var(--gold);border-radius:10px;padding:24px;color:#eee;margin-bottom:18px;}
+.welcome-banner h2{color:var(--gold);font-size:1.5rem;margin-bottom:8px;}
+.welcome-banner p{color:#bbb;margin-bottom:8px;line-height:1.6;}
+.home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.home-card{background:#1e2540;border:1px solid #333;border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all 0.2s;color:#eee;}
+.home-card:hover{border-color:var(--gold);transform:translateY(-2px);background:#252e50;}
+.home-card .card-icon{font-size:1.6rem;margin-bottom:8px;color:var(--gold);}
+.home-card h3{font-size:0.9rem;color:var(--gold);margin-bottom:4px;}
+.home-card p{color:#888;font-size:0.8rem;}
+.study-plan{background:#1e2540;border:1px solid #333;border-radius:10px;padding:18px;margin-top:18px;color:#ccc;}
+.study-plan h3{color:var(--gold);margin-bottom:12px;font-size:1rem;}
+.study-plan ol{padding-left:20px;line-height:2;}
+.study-plan li span{color:#fff;font-weight:600;}
+
+/* NOTES */
+.topic-btn{width:100%;background:#1e2540;border:1px solid #333;color:#ddd;padding:13px 16px;border-radius:7px;cursor:pointer;text-align:left;font-size:0.95rem;font-weight:600;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s;}
+.topic-btn:hover{border-color:var(--gold);color:#fff;}
+.topic-btn.open{background:#1a3560;border-color:var(--blue);color:#fff;}
+.topic-btn .arrow{transition:transform 0.3s;color:var(--gold);}
+.topic-btn.open .arrow{transform:rotate(180deg);}
+.topic-content{display:none;background:var(--cream);border:1px solid #d1c9b8;border-radius:8px;padding:22px;margin-bottom:10px;line-height:1.75;}
+.topic-content.open{display:block;}
+.topic-content h3{color:var(--blue);margin:16px 0 6px;font-size:1rem;border-bottom:1px solid #d1c9b8;padding-bottom:4px;}
+.topic-content h3:first-child{margin-top:0;}
+.topic-content ul,ol{padding-left:22px;}
+.topic-content li{margin-bottom:6px;}
+.topic-content p{margin-bottom:8px;}
+.box{border-radius:6px;padding:12px 16px;margin:12px 0;}
+.box-tip{background:#fef9c3;border-left:4px solid var(--gold);}
+.box-tip strong{color:#854d0e;}
+.box-exam{background:#dbeafe;border-left:4px solid var(--blue);}
+.box-exam strong{color:#1e40af;}
+.box-key{background:#dcfce7;border-left:4px solid var(--green);}
+.box-key strong{color:#166534;}
+.box-warn{background:#fee2e2;border-left:4px solid var(--red);}
+.box-warn strong{color:#991b1b;}
+.tag{display:inline-block;background:var(--blue);color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;font-weight:700;}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:30px;margin-top:10px;}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:3px;background:var(--gold);border-radius:3px;}
+.tl-item{position:relative;margin-bottom:20px;}
+.tl-item::before{content:'';position:absolute;left:-26px;top:6px;width:12px;height:12px;background:var(--gold);border-radius:50%;border:2px solid #111827;}
+.tl-date{color:var(--gold);font-weight:700;font-size:0.85rem;margin-bottom:3px;}
+.tl-event{background:var(--cream);border:1px solid #d1c9b8;border-radius:7px;padding:12px 14px;}
+.tl-event strong{color:var(--blue);display:block;margin-bottom:3px;}
+.tl-event p{color:#333;font-size:0.9rem;line-height:1.6;}
+
+/* GLOSSARY */
+.glossary-search{width:100%;padding:11px 14px;border-radius:7px;border:1px solid #333;background:#1e2540;color:#eee;font-size:0.95rem;margin-bottom:16px;}
+.glossary-search::placeholder{color:#666;}
+.glossary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:12px;}
+.glossary-item{background:var(--cream);border-left:4px solid var(--blue);border-radius:7px;padding:13px 15px;}
+.glossary-item .term{font-weight:700;color:var(--blue);font-size:0.95rem;margin-bottom:4px;}
+.glossary-item .def{font-size:0.88rem;color:#333;line-height:1.55;}
+.glossary-item .example{font-size:0.82rem;color:#555;margin-top:5px;border-top:1px solid #d1c9b8;padding-top:5px;font-style:italic;}
+.glossary-item.hidden{display:none;}
+
+/* FLASHCARDS */
+.fc-stats{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.fc-stat{background:#1e2540;padding:8px 16px;border-radius:6px;color:#ccc;font-size:0.85rem;border:1px solid #333;}
+.fc-stat span{color:var(--gold);font-weight:700;}
+.progress-bar-wrap{background:#1e2540;border-radius:20px;height:8px;margin-bottom:16px;overflow:hidden;}
+.progress-bar{height:100%;background:var(--gold);border-radius:20px;transition:width 0.4s;}
+.card-counter{color:#9ca3af;margin-bottom:12px;font-size:0.88rem;text-align:center;}
+.flashcard{perspective:1000px;height:240px;cursor:pointer;margin:0 auto;max-width:640px;}
+.flashcard-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.5s;}
+.flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+.card-face{position:absolute;width:100%;height:100%;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center;}
+.card-front{background:linear-gradient(135deg,#1a3560,#1e2540);border:2px solid var(--gold);color:#fff;}
+.card-front .card-label{color:var(--gold);font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;font-weight:700;}
+.card-front .card-term{font-size:1.5rem;font-weight:700;}
+.card-back{background:var(--cream);border:2px solid var(--blue);color:var(--dark);transform:rotateY(180deg);line-height:1.65;font-size:0.93rem;}
+.card-back .card-label{color:var(--blue);font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:700;}
+.flip-hint{color:#6b7280;font-size:0.78rem;margin-top:12px;text-align:center;}
+.fc-controls{display:flex;justify-content:center;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.fc-mark-row{display:flex;justify-content:center;gap:10px;margin-top:10px;}
+
+/* SHORT ANSWER */
+.sa-item{background:var(--cream);border:1px solid #d1c9b8;border-radius:8px;padding:20px;margin-bottom:14px;}
+.sa-question{font-size:1rem;font-weight:700;color:var(--dark);margin-bottom:14px;}
+.sa-marks{display:inline-block;background:var(--blue);color:#fff;font-size:0.72rem;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:700;}
+.sa-tips{margin-bottom:12px;background:var(--light-blue);border-left:3px solid var(--blue);padding:10px 14px;border-radius:4px;font-size:0.87rem;color:#1e3a5f;}
+.sa-tips strong{display:block;margin-bottom:4px;color:var(--blue);}
+.reveal-btn{background:var(--blue);color:#fff;border:none;padding:9px 18px;border-radius:6px;cursor:pointer;font-size:0.88rem;font-weight:700;transition:background 0.2s;}
+.reveal-btn:hover{background:#1a4e8a;}
+.model-answer{display:none;margin-top:14px;background:#fff;border:1px solid #c3dafe;border-radius:6px;padding:14px 16px;font-size:0.9rem;line-height:1.7;color:#1e1e1e;}
+.model-answer.visible{display:block;}
+.model-answer strong{color:var(--blue);}
+.model-answer .score-note{color:var(--green);font-weight:700;font-size:0.82rem;margin-top:10px;border-top:1px solid #c3dafe;padding-top:8px;}
+
+/* BUTTONS */
+.btn{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:0.9rem;font-weight:700;transition:all 0.2s;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-gold:hover{background:#b8870f;}
+.btn-dark{background:#1e2540;color:#ccc;border:1px solid #444;}
+.btn-dark:hover{background:#2a3060;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#166534;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-red:hover{background:#991b1b;}
+
+/* QUIZ */
+.quiz-header{background:#1e2540;border:1px solid #333;border-radius:9px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.quiz-header .qh-info{color:#ccc;font-size:0.88rem;}
+.quiz-header .qh-score{color:var(--gold);font-weight:700;font-size:1.05rem;}
+.question-card{background:var(--cream);border-radius:10px;padding:22px;margin-bottom:14px;}
+.q-num{color:var(--blue);font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.q-text{font-size:1.05rem;font-weight:700;margin-bottom:16px;line-height:1.5;}
+.q-difficulty{display:inline-block;font-size:0.72rem;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:700;vertical-align:middle;}
+.diff-easy{background:#dcfce7;color:#166534;}
+.diff-medium{background:#fef9c3;color:#854d0e;}
+.diff-hard{background:#fee2e2;color:#991b1b;}
+.options{display:grid;gap:9px;}
+.option-btn{background:#fff;border:2px solid #e5e7eb;border-radius:7px;padding:11px 15px;text-align:left;cursor:pointer;font-size:0.92rem;transition:all 0.2s;line-height:1.4;}
+.option-btn:hover:not(:disabled){border-color:var(--blue);background:#dbeafe;}
+.option-btn.correct{background:#dcfce7;border-color:var(--green);color:#166534;font-weight:700;}
+.option-btn.incorrect{background:#fee2e2;border-color:var(--red);color:#991b1b;}
+.option-btn.reveal-correct{background:#dcfce7;border-color:var(--green);}
+.feedback{margin-top:12px;padding:11px 14px;border-radius:7px;font-size:0.9rem;display:none;line-height:1.55;}
+.feedback.correct{background:#dcfce7;color:#166534;display:block;border-left:4px solid var(--green);}
+.feedback.incorrect{background:#fee2e2;color:#991b1b;display:block;border-left:4px solid var(--red);}
+.feedback .fb-correct-ans{font-weight:700;margin-bottom:4px;}
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:10px;}
+
+/* RESULTS */
+#results-section{padding:30px 20px;}
+.results-box{background:#1e2540;border:2px solid var(--gold);border-radius:14px;padding:30px;max-width:560px;margin:0 auto;color:#eee;text-align:center;}
+.big-score{font-size:3.8rem;font-weight:700;color:var(--gold);}
+.score-label{color:#9ca3af;margin-bottom:16px;}
+.grade-badge{display:inline-block;padding:8px 28px;border-radius:20px;font-size:1.2rem;font-weight:700;margin-bottom:16px;}
+.results-breakdown{margin-top:16px;text-align:left;background:#111827;border-radius:8px;padding:16px;}
+.results-breakdown h4{color:var(--gold);margin-bottom:10px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;}
+.breakdown-item{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a2a;font-size:0.87rem;color:#ccc;}
+.breakdown-item:last-child{border-bottom:none;}
+.breakdown-item .bi-result{font-weight:700;}
+.bi-correct{color:var(--green);}
+.bi-wrong{color:var(--red);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="site-title">WW1 REVISION TOOL</div>
+  <button class="active" onclick="show('home')">Home</button>
+  <button onclick="show('notes')">Study Notes</button>
+  <button onclick="show('timeline')">Key Dates</button>
+  <button onclick="show('glossary')">Glossary</button>
+  <button onclick="show('flashcards')">Flashcards</button>
+  <button onclick="show('shortanswer')">Short Answer</button>
+  <button onclick="show('quiz')">Quiz</button>
+</nav>
+
+<!-- ======= HOME ======= -->
+<div id="home" class="section active">
+  <div class="welcome-banner">
+    <h2>WW1 Revision Tool</h2>
+    <p>Everything you need to get an A. Work through each section in order for best results.</p>
+    <p style="color:#888;font-size:0.85rem;">Topics: Causes of WW1 &bull; Western Front &bull; Gallipoli &bull; Propaganda &bull; Women's Roles &bull; End of War &bull; Key Concepts</p>
+  </div>
+  <div class="home-grid">
+    <div class="home-card" onclick="show('notes')">
+      <div class="card-icon">[1]</div>
+      <h3>Study Notes</h3>
+      <p>Detailed notes for every topic with exam tips</p>
+    </div>
+    <div class="home-card" onclick="show('timeline')">
+      <div class="card-icon">[2]</div>
+      <h3>Key Dates</h3>
+      <p>Timeline of important events to memorise</p>
+    </div>
+    <div class="home-card" onclick="show('glossary')">
+      <div class="card-icon">[3]</div>
+      <h3>Glossary</h3>
+      <p>All 15 key terms with definitions and examples</p>
+    </div>
+    <div class="home-card" onclick="show('flashcards')">
+      <div class="card-icon">[4]</div>
+      <h3>Flashcards</h3>
+      <p>Test yourself — mark terms as known or still learning</p>
+    </div>
+    <div class="home-card" onclick="show('shortanswer')">
+      <div class="card-icon">[5]</div>
+      <h3>Short Answer</h3>
+      <p>Exam-style questions with model A-grade answers</p>
+    </div>
+    <div class="home-card" onclick="show('quiz')">
+      <div class="card-icon">[6]</div>
+      <h3>Quiz</h3>
+      <p>25 multiple choice questions — easy, medium and hard</p>
+    </div>
+  </div>
+  <div class="study-plan">
+    <h3>Recommended Study Order</h3>
+    <ol>
+      <li>Read the <span>Study Notes</span> for each topic — use the exam tips to guide your focus.</li>
+      <li>Check the <span>Key Dates</span> timeline — these come up in every exam.</li>
+      <li>Use the <span>Glossary</span> to memorise every key term definition precisely.</li>
+      <li>Go through <span>Flashcards</span> until every card is marked as "Known".</li>
+      <li>Practise writing <span>Short Answer</span> responses and compare to the model answers.</li>
+      <li>Do the <span>Quiz</span> and aim for 20/25 or higher. Retry any section you are weak on.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ======= STUDY NOTES ======= -->
+<div id="notes" class="section">
+  <h2 class="page-title">Study Notes</h2>
+  <p class="page-sub">Click a topic to expand it. Each section includes exam tips and key points to memorise.</p>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">1. Main Causes of WW1 – Long Term Causes <span class="tag">MAIN</span> <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <div class="box box-tip"><strong>Memory Tip:</strong> Use the acronym MAIN to remember the four long-term causes: <strong>M</strong>ilitarism, <strong>A</strong>lliances, <strong>I</strong>mperialism, <strong>N</strong>ationalism.</div>
+    <h3>Militarism</h3>
+    <ul>
+      <li>Militarism means the belief that a nation should maintain a strong military and be prepared to use it.</li>
+      <li>Between 1870 and 1914, all major European powers massively increased the size of their armies and navies.</li>
+      <li>Britain and Germany competed in a naval arms race — both built large battleships called "Dreadnoughts".</li>
+      <li>By 1914, Germany had the strongest army in Europe. Military thinking dominated government decisions.</li>
+      <li>War was widely seen as glorious and manly — this made nations more willing to fight.</li>
+    </ul>
+    <h3>Alliances</h3>
+    <ul>
+      <li>European powers formed military alliances — agreements to defend each other if attacked.</li>
+      <li><strong>Triple Alliance (1882):</strong> Germany, Austria-Hungary, and Italy agreed to support each other.</li>
+      <li><strong>Triple Entente (1907):</strong> Britain, France, and Russia formed a looser agreement for mutual support.</li>
+      <li>These alliances meant that a small conflict between two nations could rapidly drag in all of Europe — a "chain reaction" effect.</li>
+      <li>When Austria-Hungary declared war on Serbia in 1914, Russia mobilised, Germany declared war on Russia, France entered, then Britain entered when Germany invaded Belgium.</li>
+    </ul>
+    <h3>Imperialism</h3>
+    <ul>
+      <li>Imperialism is when one nation extends its power by colonising or controlling other territories.</li>
+      <li>By 1914, Britain controlled about 25% of the world's land through its empire.</li>
+      <li>Germany, a newer nation, wanted more colonies and felt "left out" — this created resentment and rivalry.</li>
+      <li>Competition for colonies in Africa and Asia caused several crises before 1914 (e.g., the Moroccan Crises of 1905 and 1911).</li>
+    </ul>
+    <h3>Nationalism</h3>
+    <ul>
+      <li>Nationalism is strong pride in and loyalty to one's nation or ethnic group, and the desire for independence.</li>
+      <li>In the Balkans ("the powder keg of Europe"), ethnic groups like Serbs, Bulgarians, and Greeks wanted independence from the Austro-Hungarian and Ottoman Empires.</li>
+      <li>Serbia wanted to unite all South Slavic peoples under one nation, which directly threatened Austria-Hungary.</li>
+      <li><strong>The Spark:</strong> On 28 June 1914, Archduke Franz Ferdinand (heir to the Austro-Hungarian throne) was assassinated in Sarajevo by Gavrilo Princip, a member of the Black Hand — a Serbian nationalist group.</li>
+      <li>Austria-Hungary blamed Serbia and issued an ultimatum. When Serbia did not fully comply, Austria-Hungary declared war.</li>
+    </ul>
+    <div class="box box-exam"><strong>Exam Focus:</strong> You need to explain EACH cause, not just name them. The best answers link the causes together — for example, explaining how alliances made nationalism in the Balkans a global crisis.</div>
+    <div class="box box-key"><strong>Key Fact:</strong> WW1 began on 28 July 1914 when Austria-Hungary declared war on Serbia. By August 1914, most of Europe was at war.</div>
+  </div>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">2. The Western Front – What Was It Like? <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <h3>What Was the Western Front?</h3>
+    <ul>
+      <li>The Western Front was the main battle zone in Western Europe, running approximately 700 km from the North Sea coast of Belgium through France to Switzerland.</li>
+      <li>Germany's plan (the Schlieffen Plan) was to quickly defeat France and then fight Russia. It failed — France held firm.</li>
+      <li>Both sides dug trenches to protect themselves, creating a line of fortification that barely moved for four years.</li>
+      <li>The result was a <strong>stalemate</strong> — neither side could break through the other's defences.</li>
+    </ul>
+    <h3>Trench Warfare and Conditions</h3>
+    <ul>
+      <li><strong>Mud and flooding:</strong> Trenches often filled with water and mud. Soldiers could not escape the wet for weeks. This caused "trench foot" — a condition where feet rot from constant moisture.</li>
+      <li><strong>Rats:</strong> Massive rats lived in the trenches, feeding on corpses and food supplies. Soldiers described rats as big as cats.</li>
+      <li><strong>Lice:</strong> Lice infested soldiers' clothing and caused intense itching and disease ("trench fever").</li>
+      <li><strong>Disease:</strong> Dysentery, typhoid, trench fever, and influenza spread rapidly in the cramped, unsanitary conditions.</li>
+      <li><strong>Shell shock:</strong> Constant artillery bombardment caused severe psychological trauma — trembling, inability to speak or function. Today we call this PTSD (Post-Traumatic Stress Disorder). At the time, soldiers were often accused of cowardice.</li>
+      <li><strong>Constant danger:</strong> Snipers, artillery, poison gas, and random bombardment meant soldiers were never safe, even behind the front line.</li>
+    </ul>
+    <h3>No Man's Land</h3>
+    <ul>
+      <li>The open ground between the two opposing trench lines was called "No Man's Land."</li>
+      <li>It was filled with barbed wire, shell craters, mud, and the bodies of dead soldiers.</li>
+      <li>Going "over the top" — climbing out of the trenches to attack across No Man's Land — was ordered by commanders and almost always resulted in enormous casualties.</li>
+    </ul>
+    <h3>Key Battles</h3>
+    <ul>
+      <li><strong>Battle of the Somme (July–November 1916):</strong> On the first day alone, the British suffered approximately 57,470 casualties (killed, wounded, missing). Total casualties for both sides exceeded 1 million.</li>
+      <li><strong>Battle of Verdun (February–December 1916):</strong> France vs. Germany — approximately 700,000 combined casualties. One of the longest and bloodiest battles in history.</li>
+    </ul>
+    <div class="box box-exam"><strong>Exam Focus:</strong> When describing conditions, use specific details — trench foot, shell shock, rats, lice, No Man's Land. Vague answers like "it was hard" will not score well. Use examples from specific battles to show depth.</div>
+    <div class="box box-warn"><strong>Common Mistake:</strong> Do not confuse the Western Front (France/Belgium) with Gallipoli (Ottoman Turkey). They were completely different campaigns.</div>
+  </div>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">3. Battle of Gallipoli – Perspectives <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <h3>Background</h3>
+    <ul>
+      <li>Gallipoli was a campaign planned by Winston Churchill (First Lord of the Admiralty) to open a new front and knock the Ottoman Empire out of the war.</li>
+      <li>The goal was to capture Istanbul (Constantinople), control the Dardanelles strait, supply Russia, and potentially end the war faster.</li>
+      <li>On 25 April 1915, Allied forces — including Australian and New Zealand troops (ANZACs) — landed on the Gallipoli Peninsula in Ottoman Turkey.</li>
+      <li>The ANZACs landed at the wrong beach (Ari Burnu, later known as ANZAC Cove) instead of a flat beach. They faced steep, rugged cliffs and immediately came under heavy fire.</li>
+    </ul>
+    <h3>How Did Soldiers View the Campaign?</h3>
+    <p>Different groups experienced and viewed Gallipoli in different ways:</p>
+    <ul>
+      <li><strong>Initial enthusiasm:</strong> Many young Australian men had enlisted with excitement and a sense of adventure. They believed the war would be short and glorious.</li>
+      <li><strong>Shock on landing:</strong> The reality of landing under fire at the wrong location, with Ottoman forces firing from above, was devastating. Thousands were killed or wounded in the first hours.</li>
+      <li><strong>Fear and horror:</strong> Soldiers described the chaos — bodies in the water, friends dying beside them, the screams of the wounded.</li>
+      <li><strong>Bravery and determination:</strong> Despite the horror, soldiers pressed forward. Acts of incredible courage were common — including soldiers carrying wounded under fire.</li>
+      <li><strong>Mateship:</strong> The shared suffering created incredibly strong bonds between soldiers. Looking after your mate became central to ANZAC culture.</li>
+      <li><strong>Harsh conditions:</strong> Soldiers endured extreme heat, inadequate water supplies, disease (especially dysentery), swarms of flies, and constant sniper fire for months.</li>
+      <li><strong>Disillusionment:</strong> As the campaign dragged on with no progress, many soldiers and officers grew frustrated with poor planning. Letters home (when not censored) revealed deep cynicism.</li>
+      <li><strong>Aboriginal soldiers:</strong> Many Indigenous Australians also served at Gallipoli — their contributions are increasingly recognised.</li>
+    </ul>
+    <div class="box box-key"><strong>Key Quote:</strong> General Sir Ian Hamilton (Allied Commander) described the landing as "a feat of arms which history will recognise as one of the most daring and difficult undertaken in modern war." However, many historians argue the campaign was poorly planned from the start.</div>
+    <div class="box box-exam"><strong>Exam Focus:</strong> "Perspectives" means you need to show different points of view. Discuss at least TWO perspectives — e.g., the initial enthusiasm vs. later disillusionment, or soldiers vs. commanders. Use specific details.</div>
+  </div>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">4. Why Was Gallipoli So Significant? <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <h3>Military Outcome: A Failure</h3>
+    <ul>
+      <li>The campaign was a clear military failure. The Allies never broke through the Ottoman defences.</li>
+      <li>The evacuation was carried out in December 1915 — one of the few successful parts of the whole campaign.</li>
+      <li>Australian casualties: approximately 8,709 killed and 19,441 wounded.</li>
+      <li>Total Allied casualties (including British, French, New Zealand, Indian): over 100,000 killed.</li>
+    </ul>
+    <h3>Why It Is Significant for Australia</h3>
+    <ul>
+      <li><strong>Birth of national identity:</strong> Gallipoli is widely considered the moment Australia "came of age" as a nation. Although federation occurred in 1901, Gallipoli gave Australians a shared national story based on sacrifice and courage.</li>
+      <li><strong>The ANZAC Legend:</strong> The campaign gave birth to the ANZAC legend — the idea that Australian and New Zealand soldiers possessed unique qualities: courage under fire, resilience, larrikinism (a disregard for authority), and above all, mateship.</li>
+      <li><strong>Australian identity vs. British identity:</strong> Gallipoli helped Australians see themselves as distinct from the British. Some felt British commanders (especially Generals Hamilton and Birdwood) had wasted Australian lives through arrogance and poor planning.</li>
+      <li><strong>ANZAC Day (25 April):</strong> The date of the landing became ANZAC Day — now Australia's most important national day of commemoration. The first official ANZAC Day was observed on 25 April 1916.</li>
+      <li><strong>Impact on conscription debate:</strong> The heavy losses at Gallipoli made conscription (forced military service) a major political issue in Australia. The government held two referendums in 1916 and 1917 — both were defeated.</li>
+    </ul>
+    <div class="box box-tip"><strong>Key Argument:</strong> Gallipoli was a military failure but a cultural triumph. It failed in its strategic goal but succeeded in creating a powerful national identity for Australia.</div>
+    <div class="box box-exam"><strong>Exam Focus:</strong> Always distinguish between the military significance (failed) and the cultural/national significance (hugely important). The best answers address both sides.</div>
+  </div>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">5. Propaganda – Definition and Use <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <h3>What Is Propaganda?</h3>
+    <ul>
+      <li>Propaganda is <strong>biased or misleading information</strong> deliberately created and spread to promote a particular political cause, manipulate public opinion, or influence people's behaviour.</li>
+      <li>Propaganda is not necessarily false — it can include true information presented in a selective, misleading, or emotional way.</li>
+      <li>During WW1, all warring governments used propaganda on a massive scale for the first time in history.</li>
+    </ul>
+    <h3>Purposes of WW1 Propaganda</h3>
+    <ul>
+      <li><strong>Recruitment:</strong> Encouraging men to enlist. Posters showed soldiers as heroes and made men who did not enlist feel ashamed. Famous examples include "Your Country Needs You" (British) and similar Australian posters.</li>
+      <li><strong>Demonising the enemy:</strong> Portraying Germany as barbaric, uncivilised, and a threat to women, children, and Christian values. The word "Hun" was used as a derogatory term for Germans.</li>
+      <li><strong>Maintaining civilian morale:</strong> Keeping the public supportive of the war effort, especially as casualties mounted and the war dragged on.</li>
+      <li><strong>Encouraging women to pressure men:</strong> The "white feather campaign" — women handed white feathers (symbols of cowardice) to men not in uniform, publicly shaming them into enlisting.</li>
+      <li><strong>Encouraging sacrifice:</strong> Convincing people to accept rationing, buy war bonds, and contribute to the war economy.</li>
+    </ul>
+    <h3>Methods of Propaganda</h3>
+    <ul>
+      <li><strong>Posters:</strong> Mass produced and displayed publicly — the most visible form of WW1 propaganda.</li>
+      <li><strong>Newspapers:</strong> Editors allowed (and were sometimes directed by) governments to avoid negative war coverage. Stories of German atrocities were often exaggerated.</li>
+      <li><strong>Public speeches and rallies:</strong> Politicians and community leaders urged support for the war.</li>
+      <li><strong>Films:</strong> Short documentary films were made showing "heroic" battle footage, often staged.</li>
+      <li><strong>Schools:</strong> Children were taught patriotism and the righteousness of the Allied cause.</li>
+    </ul>
+    <h3>Connection Between Propaganda and Censorship</h3>
+    <ul>
+      <li>Propaganda (pushing positive messages) and censorship (blocking negative information) worked together.</li>
+      <li>Soldiers' letters were censored — any mention of heavy casualties, low morale, or criticism of commanders was removed.</li>
+      <li>The public had very little access to accurate information about the true cost of the war until after it ended.</li>
+    </ul>
+    <div class="box box-exam"><strong>Exam Focus:</strong> A strong answer will explain BOTH what propaganda is AND give specific examples of how it was used. Link propaganda to censorship for higher marks.</div>
+  </div>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">6. Women's Roles in WW1 <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <h3>Context: Women Before WW1</h3>
+    <ul>
+      <li>Before WW1, Australian women had very limited roles outside the home. Most work outside the home was socially discouraged for married women.</li>
+      <li>However, Australian women had already won the right to vote federally in 1902 — making Australia one of the first nations to do so.</li>
+    </ul>
+    <h3>Nursing</h3>
+    <ul>
+      <li>The <strong>Australian Army Nursing Service (AANS)</strong> sent over 2,500 nurses to serve in the war.</li>
+      <li>Nurses served in Egypt, on hospital ships, at Gallipoli, on the Western Front, and in other theatres of war.</li>
+      <li>They worked in extremely dangerous conditions, often within range of enemy artillery, dealing with horrific wounds, amputations, and gas injuries.</li>
+      <li>Nursing was seen as an acceptable role for women because it was considered "caring" — but the reality was gruelling professional medical work.</li>
+    </ul>
+    <h3>Work on the Home Front</h3>
+    <ul>
+      <li>As millions of men enlisted, women stepped into their jobs. This was a major social change.</li>
+      <li>Women worked in munitions factories (making shells, guns, and chemicals), on farms, in public transport (as tram conductors and ticket collectors), in banks, offices, and government.</li>
+      <li>Women's organisations raised enormous sums of money for the war effort and produced goods (socks, bandages, food parcels) for soldiers.</li>
+    </ul>
+    <h3>Controversy: The White Feather Campaign</h3>
+    <ul>
+      <li>Some women participated in the "white feather campaign," handing white feathers (symbolising cowardice) to men not in uniform.</li>
+      <li>This was controversial — feathers were sometimes given to men who were injured veterans, working in vital civilian roles, or had been conscientiously rejected by the army.</li>
+    </ul>
+    <h3>Long-Term Impact</h3>
+    <ul>
+      <li>Women's wartime contributions directly challenged the idea that women were incapable of skilled work or public life.</li>
+      <li>After the war, women's suffrage movements gained strength across the world (e.g., British women over 30 gained the vote in 1918).</li>
+      <li>However, most Australian women were pushed back into domestic roles after the war as men returned to their jobs.</li>
+    </ul>
+    <div class="box box-exam"><strong>Exam Focus:</strong> Do not just list what women did — analyse the IMPACT. How did their roles challenge traditional gender expectations? What changed after the war and what did not?</div>
+  </div>
+
+  <button class="topic-btn" onclick="toggleTopic(this)">7. The End of the War and How It Changed Australia <span class="arrow">&#9660;</span></button>
+  <div class="topic-content">
+    <h3>How the War Ended</h3>
+    <ul>
+      <li>By late 1918, Germany's military was collapsing. Allied offensives pushed the Germans back along the Western Front.</li>
+      <li>Revolution broke out in Germany; Kaiser Wilhelm II abdicated on 9 November 1918.</li>
+      <li>An <strong>Armistice</strong> (an agreement to stop fighting) was signed on <strong>11 November 1918 at 11:00 am</strong> — "the eleventh hour of the eleventh day of the eleventh month."</li>
+      <li>The <strong>Treaty of Versailles</strong> formally ended the war on 28 June 1919. It:</li>
+      <ul>
+        <li>Placed full blame for the war on Germany ("War Guilt Clause" — Article 231).</li>
+        <li>Forced Germany to pay reparations of 132 billion gold marks.</li>
+        <li>Stripped Germany of its colonies and 13% of its territory.</li>
+        <li>Limited Germany's military to 100,000 soldiers.</li>
+      </ul>
+    </ul>
+    <h3>The Human Cost to Australia</h3>
+    <ul>
+      <li>Australia sent approximately <strong>416,000 men</strong> to war — all volunteers (conscription was never introduced).</li>
+      <li>Over <strong>60,000 Australians were killed</strong> and approximately 156,000 were wounded, gassed, or taken prisoner.</li>
+      <li>Australia had one of the highest proportional casualty rates of any Allied nation — nearly 65% of those who served became casualties.</li>
+    </ul>
+    <h3>How WW1 Changed Australia</h3>
+    <ul>
+      <li><strong>National identity:</strong> The ANZAC legend became the foundation of Australian identity — a sense that Australians were tough, loyal, and resourceful. This is still central to how Australians see themselves today.</li>
+      <li><strong>Political independence:</strong> Australia signed the Treaty of Versailles as an independent signatory for the first time, not just as part of the British Empire — a significant step toward full sovereignty.</li>
+      <li><strong>Domestic division:</strong> The conscription debate (1916 and 1917 referendums) deeply divided Australian society. Prime Minister Billy Hughes split the Labor Party over the issue.</li>
+      <li><strong>Social change:</strong> Women's wartime roles accelerated changes in gender expectations. Returned soldiers brought back psychological and physical trauma that society was ill-equipped to deal with.</li>
+      <li><strong>Economic impact:</strong> War debt and the loss of skilled workers affected the economy. The boom conditions in some industries (e.g., wool, wheat exports) declined after the war.</li>
+      <li><strong>Immigration and society:</strong> Anti-German sentiment during the war led to discrimination against German-Australians; German place names in South Australia were changed.</li>
+    </ul>
+    <div class="box box-tip"><strong>Key Argument:</strong> WW1 was the defining moment of modern Australian nationhood. It gave Australia an independent sense of identity, a new relationship with Britain, and a cultural heritage (the ANZAC legend) that still shapes the country today.</div>
+    <div class="box box-exam"><strong>Exam Focus:</strong> "How did it change Australia?" requires you to cover MULTIPLE areas — identity, politics, society, economy. Use specific facts and figures (e.g., 60,000 killed, two failed referendums, signed Treaty separately).</div>
+  </div>
+</div>
+
+<!-- ======= TIMELINE ======= -->
+<div id="timeline" class="section">
+  <h2 class="page-title">Key Dates Timeline</h2>
+  <p class="page-sub">Memorise these dates — they come up in every exam and quiz.</p>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-date">1882</div>
+      <div class="tl-event"><strong>Triple Alliance Formed</strong><p>Germany, Austria-Hungary, and Italy sign a mutual defence agreement — one of the long-term causes of WW1.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">1907</div>
+      <div class="tl-event"><strong>Triple Entente Formed</strong><p>Britain, France, and Russia formalise their alliance — Europe is now divided into two armed camps.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">28 June 1914</div>
+      <div class="tl-event"><strong>Assassination of Franz Ferdinand</strong><p>Archduke Franz Ferdinand, heir to Austria-Hungary, is assassinated in Sarajevo by Gavrilo Princip of the Black Hand — the spark that ignites WW1.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">28 July 1914</div>
+      <div class="tl-event"><strong>WW1 Begins</strong><p>Austria-Hungary declares war on Serbia. Within days, the alliance system drags in Russia, Germany, France, and Britain into the war.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">4 August 1914</div>
+      <div class="tl-event"><strong>Britain (and Australia) Declare War</strong><p>Britain declares war on Germany after Germany invades Belgium. Australia, as part of the British Empire, is automatically at war. PM Andrew Fisher pledges Australia's "last man and last shilling."</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">25 April 1915</div>
+      <div class="tl-event"><strong>ANZAC Landing at Gallipoli</strong><p>Australian and New Zealand troops land at ANZAC Cove on the Gallipoli Peninsula. They land at the wrong beach and face steep cliffs under heavy Ottoman fire. This date becomes ANZAC Day.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">July–November 1916</div>
+      <div class="tl-event"><strong>Battle of the Somme</strong><p>One of the bloodiest battles in history. On Day 1 alone, the British Army suffered nearly 57,000 casualties. Australian forces are heavily involved later in the battle.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">December 1915</div>
+      <div class="tl-event"><strong>Evacuation of Gallipoli</strong><p>After 8 months of failure, Allied forces secretly evacuate Gallipoli. The evacuation was the best-executed part of the entire campaign. Over 8,700 Australians had died.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">October 1916</div>
+      <div class="tl-event"><strong>First Conscription Referendum (Australia)</strong><p>PM Billy Hughes holds a referendum on introducing conscription. It is defeated 1,087,557 votes to 1,160,033 — Australians narrowly vote NO.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">December 1917</div>
+      <div class="tl-event"><strong>Second Conscription Referendum (Australia)</strong><p>Hughes holds a second referendum — also defeated. Australia remains the only major Allied nation without compulsory military service.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">11 November 1918</div>
+      <div class="tl-event"><strong>Armistice — WW1 Ends</strong><p>Fighting stops at 11:00 am on 11 November 1918. Over 60,000 Australians had been killed.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">28 June 1919</div>
+      <div class="tl-event"><strong>Treaty of Versailles Signed</strong><p>WW1 officially ends. Germany is blamed, fined, and stripped of territory. Australia signs as an independent nation for the first time — a historic moment for Australian sovereignty.</p></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">25 April 1916</div>
+      <div class="tl-event"><strong>First Official ANZAC Day</strong><p>The first anniversary of the Gallipoli landing is observed as ANZAC Day across Australia and New Zealand. It becomes the country's most important day of national remembrance.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= GLOSSARY ======= -->
+<div id="glossary" class="section">
+  <h2 class="page-title">Key Concepts Glossary</h2>
+  <p class="page-sub">Learn each definition precisely — you may be asked to define these terms in an exam. Use the search box to find specific terms.</p>
+  <input class="glossary-search" type="text" placeholder="Search terms..." oninput="filterGlossary(this.value)" />
+  <div class="glossary-grid" id="glossary-grid">
+    <div class="glossary-item" data-term="alliances">
+      <div class="term">Alliances</div>
+      <div class="def">Formal agreements between two or more countries to support each other, especially in the event of war. Alliances were a major long-term cause of WW1 — they turned a regional conflict between Austria-Hungary and Serbia into a world war through a chain reaction.</div>
+      <div class="example">Example: The Triple Alliance between Germany, Austria-Hungary, and Italy obligated each to defend the others if attacked.</div>
+    </div>
+    <div class="glossary-item" data-term="allies">
+      <div class="term">Allies</div>
+      <div class="def">The countries that opposed the Central Powers in WW1. The main Allied powers were Britain, France, Russia (until 1917), Italy (from 1915), and the USA (from 1917). Australia fought as part of the British Empire and is counted among the Allies.</div>
+      <div class="example">Example: When Australia went to war in 1914, it fought alongside its British and French allies against Germany and Austria-Hungary.</div>
+    </div>
+    <div class="glossary-item" data-term="anzac legend">
+      <div class="term">Anzac Legend</div>
+      <div class="def">The set of values and qualities believed to have been demonstrated by ANZAC soldiers — especially at Gallipoli. These include courage, endurance, mateship (loyalty to fellow soldiers), larrikinism (healthy disrespect for authority), and a "fair go" ethic. The legend became central to Australian national identity.</div>
+      <div class="example">Example: The ANZAC legend explains why Gallipoli is remembered as a defining moment for Australia, despite being a military defeat.</div>
+    </div>
+    <div class="glossary-item" data-term="censorship">
+      <div class="term">Censorship</div>
+      <div class="def">The suppression or deliberate restriction of information, usually by a government. During WW1, governments censored soldiers' letters home, newspaper reporting, and photographs so the public would not know the full horror of the war — maintaining support for the fighting.</div>
+      <div class="example">Example: Soldiers' letters describing heavy casualties or criticism of commanders were read by military censors and those sections were blacked out before delivery.</div>
+    </div>
+    <div class="glossary-item" data-term="conscription">
+      <div class="term">Conscription</div>
+      <div class="def">Compulsory (legally forced) enrolment into military service. Australia held two referendums on conscription (1916 and 1917) and defeated both — making Australia one of the only Allied nations to rely entirely on volunteers. This deeply divided Australian society.</div>
+      <div class="example">Example: PM Billy Hughes wanted to introduce conscription to replace battlefield losses, but Australian voters rejected it twice.</div>
+    </div>
+    <div class="glossary-item" data-term="central powers">
+      <div class="term">Central Powers</div>
+      <div class="def">The alliance of nations that fought against the Allies in WW1: Germany, Austria-Hungary, the Ottoman Empire (Turkey), and Bulgaria. They were called the "Central Powers" because of their central geographic position in Europe.</div>
+      <div class="example">Example: Australia's enemies — the Central Powers — were led by Germany and included the Ottomans, who fought the ANZACs at Gallipoli.</div>
+    </div>
+    <div class="glossary-item" data-term="imperialism">
+      <div class="term">Imperialism</div>
+      <div class="def">The policy or practice of extending a country's power and influence by acquiring colonies, controlling other nations' economies, or using military force. Before WW1, European imperial rivalry — especially competition for African and Asian colonies — created intense tension between the major powers.</div>
+      <div class="example">Example: Germany resented British and French control of vast empires and wanted "a place in the sun" for itself, causing diplomatic crises before 1914.</div>
+    </div>
+    <div class="glossary-item" data-term="nationalism">
+      <div class="term">Nationalism</div>
+      <div class="def">Strong pride in and devotion to one's nation or ethnic group, often including the desire for political independence. In the Balkans, nationalism among Slavic peoples directly triggered WW1 — particularly Serbian nationalism's threat to the multi-ethnic Austro-Hungarian Empire.</div>
+      <div class="example">Example: Gavrilo Princip was motivated by Serbian nationalism when he assassinated Franz Ferdinand, believing it would free South Slavic peoples from Austro-Hungarian rule.</div>
+    </div>
+    <div class="glossary-item" data-term="no mans land">
+      <div class="term">No Man's Land</div>
+      <div class="def">The open, unoccupied and highly dangerous ground between the opposing trench systems on the Western Front. It was typically filled with barbed wire, shell craters, mud, unexploded ordnance, and the bodies of the dead. Advancing across it during an attack ("going over the top") resulted in catastrophic casualties.</div>
+      <div class="example">Example: On the first day of the Battle of the Somme, thousands of soldiers died crossing No Man's Land, cut down by German machine guns.</div>
+    </div>
+    <div class="glossary-item" data-term="pacifist">
+      <div class="term">Pacifist</div>
+      <div class="def">A person who believes that war and all forms of violence are morally unjustifiable and that disputes should always be resolved peacefully. During WW1, pacifists in Australia often opposed both the war and conscription. They faced intense social pressure, accusations of cowardice, and sometimes legal persecution.</div>
+      <div class="example">Example: Many members of the labour movement were pacifists who argued that working-class men were dying to protect the profits of wealthy elites.</div>
+    </div>
+    <div class="glossary-item" data-term="propaganda">
+      <div class="term">Propaganda</div>
+      <div class="def">Biased or misleading information deliberately created and spread to promote a particular political cause or point of view. WW1 governments used propaganda to recruit soldiers, maintain public morale, demonise the enemy, and discourage opposition to the war. It often involved appeals to emotion, fear, and patriotism.</div>
+      <div class="example">Example: Recruitment posters showing German soldiers committing atrocities against women and children were designed to provoke outrage and encourage men to enlist.</div>
+    </div>
+    <div class="glossary-item" data-term="stalemate">
+      <div class="term">Stalemate</div>
+      <div class="def">A situation in which neither side in a conflict can make significant progress or achieve victory. On the Western Front, a military stalemate developed by late 1914 and lasted until 1918 — both sides dug into trench systems that neither could break through, resulting in years of bloody deadlock.</div>
+      <div class="example">Example: Despite suffering over a million casualties at the Somme and Verdun in 1916, the stalemate on the Western Front barely moved a few kilometres in either direction.</div>
+    </div>
+    <div class="glossary-item" data-term="triple alliance">
+      <div class="term">Triple Alliance</div>
+      <div class="def">The pre-war military alliance (formed 1882) between Germany, Austria-Hungary, and Italy, in which all three agreed to defend each other if attacked by other great powers. Italy did not honour the alliance when war started in 1914 (claiming it was a defensive alliance only) and actually joined the Allies in 1915.</div>
+      <div class="example">Example: When Austria-Hungary declared war on Serbia in 1914, it expected Germany to support it under the Triple Alliance — and Germany did.</div>
+    </div>
+    <div class="glossary-item" data-term="triple entente">
+      <div class="term">Triple Entente</div>
+      <div class="def">The pre-war diplomatic agreement (formalised 1907) between France, Russia, and Britain. Unlike the Triple Alliance, it was not a formal military treaty but rather an understanding of mutual support. It formed the core of the Allied powers at the start of WW1.</div>
+      <div class="example">Example: When Germany declared war on France in 1914, Britain entered the war under the obligations of the Triple Entente and because Germany had violated Belgian neutrality.</div>
+    </div>
+    <div class="glossary-item" data-term="western front">
+      <div class="term">Western Front</div>
+      <div class="def">The main battle zone in Western Europe during WW1, running approximately 700 km from the Belgian coast to Switzerland. It was the site of the war's most devastating fighting — characterised by entrenched positions, stalemate, industrial-scale casualties, and the first large-scale use of new weapons like poison gas, tanks, and aircraft.</div>
+      <div class="example">Example: Australian forces served on the Western Front from 1916, fighting in major battles including Pozières, Bullecourt, and Hamel.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= FLASHCARDS ======= -->
+<div id="flashcards" class="section">
+  <h2 class="page-title">Flashcards</h2>
+  <p class="page-sub">Read the term, think of the definition, then flip the card. Mark each card as "Known" or "Still Learning" to track your progress.</p>
+  <div class="fc-stats">
+    <div class="fc-stat">Total: <span id="fc-total-count">15</span></div>
+    <div class="fc-stat">Known: <span id="fc-known-count">0</span></div>
+    <div class="fc-stat">Still Learning: <span id="fc-learning-count">0</span></div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="fc-progress" style="width:6.67%"></div></div>
+  <div class="card-counter" id="fc-counter">Card 1 of 15</div>
+  <div class="flashcard" id="flashcard" onclick="flipCard()">
+    <div class="flashcard-inner">
+      <div class="card-face card-front">
+        <div class="card-label">Term — Click to flip</div>
+        <div class="card-term" id="fc-term"></div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-label">Definition</div>
+        <div id="fc-def"></div>
+      </div>
+    </div>
+  </div>
+  <p class="flip-hint">Click the card to reveal the definition</p>
+  <div class="fc-mark-row">
+    <button class="btn btn-red" onclick="markCard('learning')" style="padding:8px 18px;font-size:0.85rem;">Still Learning</button>
+    <button class="btn btn-green" onclick="markCard('known')" style="padding:8px 18px;font-size:0.85rem;">Known</button>
+  </div>
+  <div class="fc-controls">
+    <button class="btn btn-dark" onclick="fcNav(-1)">Previous</button>
+    <button class="btn btn-gold" onclick="flipCard()">Flip Card</button>
+    <button class="btn btn-dark" onclick="fcNav(1)">Next</button>
+  </div>
+  <div style="text-align:center;margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn btn-dark" onclick="shuffleCards()" style="font-size:0.82rem;padding:8px 14px;">Shuffle All</button>
+    <button class="btn btn-dark" onclick="studyLearning()" style="font-size:0.82rem;padding:8px 14px;">Study "Still Learning" Only</button>
+    <button class="btn btn-dark" onclick="resetMarks()" style="font-size:0.82rem;padding:8px 14px;">Reset All</button>
+  </div>
+</div>
+
+<!-- ======= SHORT ANSWER ======= -->
+<div id="shortanswer" class="section">
+  <h2 class="page-title">Short Answer Practice</h2>
+  <p class="page-sub">These are the style of questions that appear in tests and exams. Read the question, think about your answer, then reveal the model A-grade response to compare.</p>
+
+  <div class="sa-item">
+    <div class="sa-question">1. Explain TWO long-term causes of World War One. <span class="sa-marks">4 marks</span></div>
+    <div class="sa-tips"><strong>How to answer (4 marks = 2 marks per cause):</strong> For each cause, state what it is, then explain HOW it contributed to the war. Do not just define the term — explain its role as a cause.</div>
+    <button class="reveal-btn" onclick="toggleAnswer(this)">Show Model Answer</button>
+    <div class="model-answer">
+      <p>One long-term cause of WW1 was <strong>nationalism</strong>. Nationalism is the strong desire of an ethnic group to have its own independent nation. In the Balkans, Serbian nationalism posed a direct threat to Austria-Hungary, which ruled over several Slavic ethnic groups. This tension culminated in the assassination of Archduke Franz Ferdinand in Sarajevo on 28 June 1914 by Gavrilo Princip, a Serbian nationalist — which sparked the war.</p>
+      <br>
+      <p>A second long-term cause was the <strong>alliance system</strong>. Europe was divided into two armed camps — the Triple Alliance (Germany, Austria-Hungary, Italy) and the Triple Entente (Britain, France, Russia). These alliances meant that when Austria-Hungary declared war on Serbia, a chain reaction pulled in the major powers. Russia mobilised to protect Serbia; Germany declared war on Russia; France entered; then Britain entered when Germany violated Belgian neutrality. A local conflict escalated into a world war because of the alliance system.</p>
+      <div class="score-note">Why this scores full marks: Each cause is stated clearly, explained in context, and linked to the outbreak of war with specific detail.</div>
+    </div>
+  </div>
+
+  <div class="sa-item">
+    <div class="sa-question">2. Describe the conditions that soldiers experienced on the Western Front. <span class="sa-marks">4 marks</span></div>
+    <div class="sa-tips"><strong>How to answer:</strong> Describe at least 3–4 specific conditions. Use precise language and specific details — "trench foot," "shell shock," "No Man's Land," etc. Do not be vague.</div>
+    <button class="reveal-btn" onclick="toggleAnswer(this)">Show Model Answer</button>
+    <div class="model-answer">
+      <p>Soldiers on the Western Front faced appalling physical and psychological conditions. The trenches were waterlogged and muddy, causing a medical condition called <strong>trench foot</strong>, where feet became infected and rotted from constant moisture. Trenches were infested with enormous rats that fed on the bodies of the dead, and with lice that spread disease. Disease — including dysentery, typhoid, and trench fever — spread rapidly through the unsanitary trenches.</p>
+      <br>
+      <p>Perhaps the most psychologically damaging experience was the constant artillery bombardment, which caused <strong>shell shock</strong> — what we now call PTSD. Soldiers suffered trembling, nightmares, inability to function, and loss of speech. When ordered to go "over the top" and cross <strong>No Man's Land</strong> — the barbed-wire strewn, muddy ground between the trenches — they faced devastating fire from machine guns. At the Battle of the Somme (1916), approximately 57,000 British soldiers became casualties on the first day alone.</p>
+      <div class="score-note">Why this scores full marks: Uses specific terms, specific examples including the Battle of the Somme, and addresses both physical and psychological conditions.</div>
+    </div>
+  </div>
+
+  <div class="sa-item">
+    <div class="sa-question">3. Explain how Australian soldiers viewed the Gallipoli campaign. Refer to more than one perspective. <span class="sa-marks">5 marks</span></div>
+    <div class="sa-tips"><strong>How to answer:</strong> "Perspectives" requires you to show more than one view. Cover initial expectations vs. reality, or compare how different groups of soldiers felt (early enthusiasm, shock on landing, later disillusionment).</div>
+    <button class="reveal-btn" onclick="toggleAnswer(this)">Show Model Answer</button>
+    <div class="model-answer">
+      <p>Australian soldiers held varying perspectives on the Gallipoli campaign, ranging from initial enthusiasm to subsequent disillusionment.</p>
+      <br>
+      <p>Initially, many Australians enlisted with excitement, seeing the war as an adventure and an opportunity to serve the British Empire. This enthusiasm reflected the broader patriotism of the time — Australia had only been a federation since 1901 and many felt a strong loyalty to Britain.</p>
+      <br>
+      <p>However, the reality of the Gallipoli landing on 25 April 1915 was shocking. The ANZACs landed at the wrong beach, facing steep cliffs and immediately coming under heavy fire. Soldiers were confronted with carnage — dead and wounded comrades in the water, chaos, and relentless Ottoman fire from above. Private letters (those not censored) described horror, confusion, and grief.</p>
+      <br>
+      <p>Despite this, the campaign also generated tremendous <strong>bravery and mateship</strong>. Soldiers took pride in their resilience and loyalty to one another. Figures like "Simpson and his donkey" (John Simpson Kirkpatrick, who carried wounded soldiers under fire) became famous symbols of ANZAC courage.</p>
+      <br>
+      <p>As the campaign dragged on through winter with no progress, <strong>disillusionment</strong> grew. Many soldiers and junior officers felt that British commanders had poorly planned the operation and were sacrificing lives needlessly. This contributed to a view of Australians as distinct from — and in some ways superior to — their British counterparts.</p>
+      <div class="score-note">Why this scores full marks: Clearly presents multiple perspectives (enthusiasm, shock, bravery, disillusionment), uses specific examples, and shows how perspectives changed over time.</div>
+    </div>
+  </div>
+
+  <div class="sa-item">
+    <div class="sa-question">4. Explain what propaganda is and how it was used during WW1. <span class="sa-marks">4 marks</span></div>
+    <div class="sa-tips"><strong>How to answer:</strong> Define propaganda first, then give at least 2–3 specific examples of how it was used. Link propaganda to censorship for bonus marks.</div>
+    <button class="reveal-btn" onclick="toggleAnswer(this)">Show Model Answer</button>
+    <div class="model-answer">
+      <p><strong>Propaganda</strong> is biased or misleading information deliberately created to promote a political cause, influence public opinion, or change people's behaviour.</p>
+      <br>
+      <p>During WW1, all warring nations used propaganda extensively. Its main purposes included <strong>military recruitment</strong> — posters showed soldiers as heroes and used guilt and patriotism to encourage men to enlist. Slogans like "Your Country Needs You" targeted men directly. Women were also enlisted as propaganda tools through the <strong>white feather campaign</strong>, in which women handed white feathers (symbols of cowardice) to men not in uniform, publicly shaming them into enlisting.</p>
+      <br>
+      <p>Governments also used propaganda to <strong>demonise the enemy</strong>, portraying Germans as barbaric "Huns" who committed atrocities against innocent civilians — often exaggerating or fabricating events to generate outrage. This kept public support for the war strong, even as casualties mounted.</p>
+      <br>
+      <p>Propaganda worked hand-in-hand with <strong>censorship</strong>. While propaganda pushed positive, patriotic messages, censorship blocked negative information — soldiers' letters were read and edited, and newspapers were discouraged from reporting high casualty figures or criticism of commanders.</p>
+      <div class="score-note">Why this scores full marks: Clear definition, multiple specific examples (posters, white feathers, demonisation), and the link to censorship demonstrates deeper understanding.</div>
+    </div>
+  </div>
+
+  <div class="sa-item">
+    <div class="sa-question">5. How did WW1 change Australia? Use evidence to support your answer. <span class="sa-marks">6 marks</span></div>
+    <div class="sa-tips"><strong>How to answer (6 marks):</strong> Cover at least 3 distinct areas of change — national identity, political changes, social changes, economic impact. Use specific evidence (dates, statistics, events).</div>
+    <button class="reveal-btn" onclick="toggleAnswer(this)">Show Model Answer</button>
+    <div class="model-answer">
+      <p>WW1 fundamentally transformed Australia in several key areas.</p>
+      <br>
+      <p><strong>National Identity:</strong> The war — and particularly the Gallipoli campaign — forged a distinct Australian national identity. The ANZAC legend, celebrating qualities of courage, mateship, and resilience, became the foundation of how Australians saw themselves as a people, distinct from Britain. ANZAC Day (25 April) became Australia's most important national day of remembrance, first observed in 1916.</p>
+      <br>
+      <p><strong>Political Changes:</strong> Australia's relationship with Britain changed significantly. Signing the Treaty of Versailles in 1919 as an independent nation — not just as part of the British Empire — marked an important step toward political sovereignty. Domestically, the conscription debate split the country and the Labor Party, with PM Billy Hughes being expelled from Labor after two failed referendums in 1916 and 1917.</p>
+      <br>
+      <p><strong>Social Changes:</strong> Women's wartime roles challenged traditional gender expectations. Over 2,500 nurses served with the AANS in combat zones, and women worked in munitions factories and transport — roles previously closed to them. Returned soldiers brought home severe physical injuries and psychological trauma (shell shock) that society struggled to support. Anti-German sentiment led to discrimination against German-Australians.</p>
+      <br>
+      <p><strong>Human Cost:</strong> The scale of loss was immense. Of approximately 416,000 Australians who served, over 60,000 were killed and 156,000 were wounded — a casualty rate of nearly 65%. This grief touched nearly every family and community in the country.</p>
+      <div class="score-note">Why this scores full marks: Covers four distinct areas, uses specific evidence throughout (dates, statistics, named events), and builds a coherent argument that the war fundamentally changed Australia.</div>
+    </div>
+  </div>
+
+  <div class="sa-item">
+    <div class="sa-question">6. Why was the Battle of Gallipoli so significant for Australia, despite being a military failure? <span class="sa-marks">5 marks</span></div>
+    <div class="sa-tips"><strong>How to answer:</strong> Acknowledge the military failure, then explain the cultural/national significance. The contrast between military failure and cultural success is the key to a high mark here.</div>
+    <button class="reveal-btn" onclick="toggleAnswer(this)">Show Model Answer</button>
+    <div class="model-answer">
+      <p>The Gallipoli campaign (April–December 1915) was clearly a military failure. The Allies failed to capture the Dardanelles or Constantinople, and the campaign ended with a full evacuation in December 1915. Approximately 8,700 Australians were killed and 19,441 were wounded — enormous losses for a nation of fewer than 5 million people.</p>
+      <br>
+      <p>Despite this failure, Gallipoli became the most significant event in Australian national history for several reasons.</p>
+      <br>
+      <p>First, it gave birth to the <strong>ANZAC legend</strong> — the belief that Australian soldiers demonstrated extraordinary and uniquely Australian qualities: courage, endurance, digger spirit, and above all mateship. This gave Australians a shared national story and a sense of pride distinct from their British identity.</p>
+      <br>
+      <p>Second, it created <strong>ANZAC Day</strong> (25 April) — now Australia's most sacred national day, observed with dawn services across the country and around the world. More Australians now attend ANZAC Day services than at any previous time in history, demonstrating the enduring significance of Gallipoli.</p>
+      <br>
+      <p>Third, the campaign influenced Australia's developing sense of <strong>national independence</strong>. Many Australians felt that British commanders had mismanaged the campaign and wasted Australian lives. This strengthened the view that Australia should act as a more independent nation — a view that ultimately led to Australia signing the Treaty of Versailles independently in 1919.</p>
+      <div class="score-note">Why this scores full marks: Clearly acknowledges the military failure, then systematically explains THREE reasons for its national significance, using specific details throughout.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= QUIZ ======= -->
+<div id="quiz" class="section">
+  <h2 class="page-title">Quiz</h2>
+  <p class="page-sub">25 questions across easy, medium, and hard difficulty. Read each question carefully and select your answer.</p>
+  <div class="quiz-header">
+    <div class="qh-info">Question <span id="q-current">1</span> of <span id="q-total">25</span></div>
+    <div class="qh-score">Score: <span id="q-score">0</span> / <span id="q-answered">0</span></div>
+  </div>
+  <div id="question-area"></div>
+  <div class="quiz-nav">
+    <button class="btn btn-dark" id="prev-btn" onclick="qNav(-1)" style="display:none">Previous</button>
+    <button class="btn btn-gold" id="next-btn" onclick="qNav(1)" style="display:none">Next Question</button>
+    <button class="btn btn-green" id="finish-btn" onclick="showResults()" style="display:none">Finish Quiz</button>
+  </div>
+</div>
+
+<!-- ======= RESULTS ======= -->
+<div id="results-section" class="section">
+  <h2 class="page-title" style="text-align:center;">Quiz Results</h2>
+  <div class="results-box">
+    <div class="big-score" id="res-score"></div>
+    <div class="score-label" id="res-label"></div>
+    <div class="grade-badge" id="res-grade"></div>
+    <p id="res-msg" style="color:#bbb;margin-bottom:20px;"></p>
+    <div class="results-breakdown" id="res-breakdown"></div>
+    <div style="margin-top:18px;">
+      <button class="btn btn-gold" onclick="restartQuiz()" style="margin-right:10px;">Try Again</button>
+      <button class="btn btn-dark" onclick="show('home')">Home</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// NAV
+const navLabels = {home:'Home',notes:'Study Notes',timeline:'Key Dates',glossary:'Glossary',flashcards:'Flashcards',shortanswer:'Short Answer',quiz:'Quiz'};
+function show(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>{if(b.textContent.trim()===navLabels[id])b.classList.add('active');});
+  if(id==='flashcards')initFlashcards();
+  if(id==='quiz')initQuiz();
+}
+
+// ACCORDION
+function toggleTopic(btn){
+  const c=btn.nextElementSibling;
+  const open=c.classList.contains('open');
+  document.querySelectorAll('.topic-content').forEach(x=>x.classList.remove('open'));
+  document.querySelectorAll('.topic-btn').forEach(x=>x.classList.remove('open'));
+  if(!open){c.classList.add('open');btn.classList.add('open');}
+}
+
+// GLOSSARY
+function filterGlossary(v){
+  const val=v.toLowerCase();
+  document.querySelectorAll('.glossary-item').forEach(item=>{
+    item.classList.toggle('hidden',!(item.getAttribute('data-term')+item.innerText.toLowerCase()).includes(val));
+  });
+}
+
+// SHORT ANSWER
+function toggleAnswer(btn){
+  const ans=btn.nextElementSibling;
+  if(ans.classList.contains('visible')){ans.classList.remove('visible');btn.textContent='Show Model Answer';}
+  else{ans.classList.add('visible');btn.textContent='Hide Model Answer';}
+}
+
+// FLASHCARD DATA
+const allCards=[
+  {term:'Alliances',def:'Formal agreements between countries to support each other in war. Alliances were a major cause of WW1 — they turned a local Austro-Serbian conflict into a world war through a chain reaction involving the Triple Alliance and Triple Entente.'},
+  {term:'Allies',def:'The nations opposing the Central Powers: Britain, France, Russia, Italy (from 1915), and USA (from 1917). Australia fought as part of the British Empire alongside the Allies.'},
+  {term:'Anzac Legend',def:'The belief that ANZAC soldiers demonstrated uniquely Australian qualities — courage, endurance, mateship, and larrikinism. Born at Gallipoli, it became the foundation of Australian national identity.'},
+  {term:'Censorship',def:'The suppression of information by governments. During WW1, soldiers\' letters and news reports were censored to hide the true cost of the war and maintain public support for the fighting.'},
+  {term:'Conscription',def:'Compulsory military service. Australia voted AGAINST conscription in two referendums (October 1916 and December 1917), making it one of the only Allied nations with an entirely volunteer army.'},
+  {term:'Central Powers',def:'Germany, Austria-Hungary, the Ottoman Empire (Turkey), and Bulgaria — the nations that fought against the Allies in WW1. Australia fought against all of them at various points.'},
+  {term:'Imperialism',def:'Extending a country\'s power through colonisation or military force. Competition for overseas colonies created tension between European powers before WW1 — especially between Britain, France, and Germany.'},
+  {term:'Nationalism',def:'Strong pride in and loyalty to one\'s nation or ethnic group. Serbian nationalism in the Balkans directly triggered WW1 through the assassination of Archduke Franz Ferdinand on 28 June 1914.'},
+  {term:"No Man's Land",def:"The deadly open ground between the two opposing trench systems — filled with mud, barbed wire, shell craters, and corpses. Going 'over the top' into No Man's Land almost always resulted in catastrophic casualties."},
+  {term:'Pacifist',def:'A person who believes war is never morally justified and opposes all armed conflict. Pacifists in WW1 Australia often opposed conscription and the war effort, and faced social abuse and accusations of cowardice.'},
+  {term:'Propaganda',def:'Biased information deliberately spread to promote a cause or manipulate public opinion. Used for recruitment (posters, white feather campaigns), demonising the enemy, and maintaining civilian morale during WW1.'},
+  {term:'Stalemate',def:'A situation where neither side can make significant progress. The Western Front became a stalemate by late 1914 — both sides dug into trench systems and could not break through, despite millions of casualties.'},
+  {term:'Triple Alliance',def:'The pre-war alliance (1882) between Germany, Austria-Hungary, and Italy. Italy did not enter the war on this side in 1914, and actually joined the Allies in 1915.'},
+  {term:'Triple Entente',def:'The pre-war alliance (1907) between France, Russia, and Britain. It was a looser agreement than the Triple Alliance but became the basis of the Allied powers in WW1.'},
+  {term:'Western Front',def:'The main battle zone in Western Europe — approximately 700 km of trenches from Belgium to Switzerland. Defined by stalemate, trench warfare, poison gas, and massive casualties during 1914–1918.'},
+];
+
+let fcCards=[...allCards], fcIndex=0, fcMarks={};
+allCards.forEach((_,i)=>fcMarks[i]='unmarked');
+
+function initFlashcards(){fcIndex=0;updateCard();}
+
+function updateCard(){
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('fc-term').textContent=fcCards[fcIndex].term;
+  document.getElementById('fc-def').textContent=fcCards[fcIndex].def;
+  document.getElementById('fc-counter').textContent=`Card ${fcIndex+1} of ${fcCards.length}`;
+  document.getElementById('fc-progress').style.width=`${((fcIndex+1)/fcCards.length)*100}%`;
+  updateFcStats();
+}
+
+function updateFcStats(){
+  const known=Object.values(fcMarks).filter(v=>v==='known').length;
+  const learning=Object.values(fcMarks).filter(v=>v==='learning').length;
+  document.getElementById('fc-known-count').textContent=known;
+  document.getElementById('fc-learning-count').textContent=learning;
+}
+
+function flipCard(){document.getElementById('flashcard').classList.toggle('flipped');}
+function fcNav(dir){fcIndex=(fcIndex+dir+fcCards.length)%fcCards.length;updateCard();}
+
+function markCard(status){
+  const origIndex=allCards.findIndex(c=>c.term===fcCards[fcIndex].term);
+  if(origIndex>=0)fcMarks[origIndex]=status;
+  updateFcStats();
+  if(fcIndex<fcCards.length-1)fcNav(1);
+}
+
+function shuffleCards(){
+  fcCards=[...allCards];
+  for(let i=fcCards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[fcCards[i],fcCards[j]]=[fcCards[j],fcCards[i]];}
+  fcIndex=0;updateCard();
+}
+
+function studyLearning(){
+  const learning=allCards.filter((_,i)=>fcMarks[i]==='learning'||fcMarks[i]==='unmarked');
+  if(learning.length===0){alert('No cards marked as "Still Learning"! Mark some cards first.');return;}
+  fcCards=learning;fcIndex=0;updateCard();
+}
+
+function resetMarks(){
+  allCards.forEach((_,i)=>fcMarks[i]='unmarked');
+  fcCards=[...allCards];fcIndex=0;updateCard();
+}
+
+// QUIZ DATA
+const questions=[
+  {q:"What does the 'M' in the MAIN acronym (causes of WW1) stand for?",opts:['Monarchy','Militarism','Maps','Migration'],a:1,d:'easy',exp:'Militarism — the belief in and build-up of strong military forces. European powers massively expanded their armies and navies before 1914.'},
+  {q:"Which countries belonged to the Triple Alliance?",opts:['France, Russia, Britain','Germany, Austria-Hungary, Italy','Germany, Turkey, Bulgaria','USA, Britain, France'],a:1,d:'easy',exp:'The Triple Alliance (1882) was Germany, Austria-Hungary, and Italy. Italy later switched to the Allied side in 1915.'},
+  {q:"Who was assassinated to trigger WW1?",opts:['Kaiser Wilhelm II','Tsar Nicholas II','Archduke Franz Ferdinand','General Haig'],a:2,d:'easy',exp:'Archduke Franz Ferdinand, heir to Austria-Hungary, was assassinated in Sarajevo on 28 June 1914 by Gavrilo Princip.'},
+  {q:"What was 'No Man's Land'?",opts:["A neutral country in Europe","The ground between opposing trenches","The area behind the front lines","A term for soldiers with no identification"],a:1,d:'easy',exp:"No Man's Land was the deadly open ground between the two opposing trench systems — barbed wire, mud, and shell craters."},
+  {q:"When did the ANZACs land at Gallipoli?",opts:['August 1914','25 April 1915','July 1916','11 November 1918'],a:1,d:'easy',exp:'The ANZAC landing at Gallipoli occurred on 25 April 1915 — now commemorated as ANZAC Day.'},
+  {q:"What best describes the Western Front?",opts:['Rapid cavalry charges','Major naval battles','Stalemate and trench warfare','Primarily air combat'],a:2,d:'easy',exp:'The Western Front was defined by stalemate — both sides dug into trenches and could not break through for nearly four years.'},
+  {q:"What is propaganda?",opts:['A military strategy','Biased information used to influence public opinion','A type of chemical weapon','The process of treaty-making'],a:1,d:'easy',exp:'Propaganda is biased or misleading information created to promote a cause or manipulate public opinion — used heavily for recruitment and morale in WW1.'},
+  {q:"What was conscription?",opts:['Voluntary military service','Compulsory military service','A wartime rationing system','A type of ceasefire agreement'],a:1,d:'easy',exp:'Conscription is compulsory (forced) military service. Australia voted against it in referendums in both 1916 and 1917.'},
+  {q:"When did WW1 end (Armistice)?",opts:['11 November 1918','28 June 1919','4 August 1914','25 April 1916'],a:0,d:'easy',exp:'The Armistice was signed on 11 November 1918 at 11:00 am — the eleventh hour of the eleventh day of the eleventh month.'},
+  {q:"What nations formed the Central Powers?",opts:['France, Russia, Britain','Germany, Austria-Hungary, Ottoman Empire, Bulgaria','USA, Britain, Italy, France','Japan, China, Russia, Germany'],a:1,d:'easy',exp:'The Central Powers were Germany, Austria-Hungary, the Ottoman Empire (Turkey), and Bulgaria.'},
+  {q:"What does IMPERIALISM mean as a cause of WW1?",opts:['Strong pride in your nation','Building up military forces','Competition to extend power by controlling other nations/territories','Forming military alliances'],a:2,d:'medium',exp:'Imperialism was competition for colonies and overseas influence. European rivalry over colonies in Africa and Asia created tension before 1914.'},
+  {q:"Why did alliances cause WW1 to spread so quickly?",opts:['Alliances prevented other countries from joining','They created a chain reaction where one conflict pulled in many nations','They gave Germany total control','They allowed free movement of armies'],a:1,d:'medium',exp:'Alliance obligations meant Austria-Hungary vs. Serbia pulled in Russia, then Germany, then France, then Britain within days — a chain reaction.'},
+  {q:"What was the purpose of censorship in WW1?",opts:['To protect military secrets from spies','To hide the reality of the war and maintain public support','To prevent enemy propaganda reaching civilians','To stop foreign languages being spoken'],a:1,d:'medium',exp:'Governments censored soldiers\' letters and news to hide the true horror and cost of the war, keeping public support for the fighting.'},
+  {q:"What does STALEMATE mean in WW1?",opts:['A fast Allied victory','A situation where neither side can make progress','A diplomatic peace agreement','A new attack tactic'],a:1,d:'medium',exp:'Stalemate means neither side can advance. On the Western Front, both sides dug trenches and the front line barely moved for four years.'},
+  {q:"How did women's roles change during WW1?",opts:['They had no change in roles','They took over men\'s jobs in factories and farms and served as nurses','They solely served in combat roles','They primarily worked in government only'],a:1,d:'medium',exp:'Women took over jobs vacated by enlisting men — factories, transport, farms — and over 2,500 Australians served as nurses in dangerous conditions.'},
+  {q:"What was the outcome of Australia's WW1 conscription referendums?",opts:['Conscription was approved both times','Conscription was rejected both times','The first passed; the second failed','The first failed; the second passed'],a:1,d:'medium',exp:'Both referendums (1916 and 1917) were defeated. Australia remained the only major Allied nation with an entirely volunteer army.'},
+  {q:"Why was Gallipoli significant DESPITE being a military failure?",opts:['It had no lasting significance','It helped create Australian national identity and the ANZAC legend','It directly led to Australia leaving the British Empire','It proved Australian soldiers were superior to all others'],a:1,d:'medium',exp:'Gallipoli was militarily a failure but culturally decisive — it created the ANZAC legend and a distinct Australian national identity still central to the country today.'},
+  {q:"What was the Treaty of Versailles (1919)?",opts:['An alliance formed before WW1','The peace treaty that officially ended WW1, blaming Germany','The ceasefire agreement of November 1918','A trade agreement between Allied nations'],a:1,d:'medium',exp:'The Treaty of Versailles officially ended WW1 in June 1919. It placed full blame ("War Guilt") on Germany and imposed reparations and territorial losses.'},
+  {q:"What was the AANS?",opts:['A type of artillery gun used in WW1','The Australian Army Nursing Service — nurses who served in the war','An alliance between Australia and New Zealand','A wartime propaganda campaign'],a:1,d:'medium',exp:'The Australian Army Nursing Service (AANS) sent over 2,500 nurses to serve in Egypt, Gallipoli, the Western Front, and other theatres.'},
+  {q:"What was 'shell shock'?",opts:['An injury caused by shrapnel from shells','Psychological trauma caused by constant bombardment, now called PTSD','A type of new artillery shell','Fear of gas attacks'],a:1,d:'medium',exp:'Shell shock was severe psychological trauma caused by constant artillery bombardment. Soldiers suffered trembling, nightmares, and inability to function. Today it is recognised as PTSD.'},
+  {q:"On what date did Archduke Franz Ferdinand get assassinated?",opts:['4 August 1914','28 July 1914','28 June 1914','25 April 1915'],a:2,d:'hard',exp:'Archduke Franz Ferdinand was assassinated on 28 June 1914 in Sarajevo. WW1 was officially declared by Austria-Hungary on 28 July 1914.'},
+  {q:"Why did the alliance system SPECIFICALLY turn a local Balkan conflict into a world war?",opts:['Because alliances required nations to declare war automatically','Because alliance obligations meant defending allies created a chain reaction of declarations','Because the USA forced European nations to fight','Because all nations had the same enemies already'],a:1,d:'hard',exp:'When Austria-Hungary declared war on Serbia, Russia mobilised (defending Serbia), Germany declared war on Russia (defending Austria-Hungary), France and then Britain entered — a classic alliance chain reaction.'},
+  {q:"Approximately how many Australians were killed during WW1?",opts:['10,000','30,000','60,000','120,000'],a:2,d:'hard',exp:'Over 60,000 Australians were killed in WW1, from approximately 416,000 who served. Australia\'s casualty rate was one of the highest per capita among Allied nations.'},
+  {q:"What made the ANZAC evacuation from Gallipoli in December 1915 historically notable?",opts:['It was a military victory disguised as a retreat','It was executed without a single casualty — widely considered the most successful part of the campaign','It was ordered against British wishes','It led to the ANZAC legend being created'],a:1,d:'hard',exp:'The evacuation of December 1915 was carried out in total secrecy and successfully withdrawn tens of thousands of troops without a single combat death — widely regarded as the best-executed operation of the entire Gallipoli campaign.'},
+  {q:"How did Australia signing the Treaty of Versailles independently (1919) differ from previous international agreements?",opts:['It was the first treaty Australia signed','It was the first time Australia signed as an independent nation rather than solely as part of the British Empire','Australia was forced to sign — it had no choice','It gave Australia control over former German colonies'],a:1,d:'hard',exp:'Australia had previously only signed treaties as part of the British Empire. Signing the Treaty of Versailles independently in 1919 was a significant step toward national sovereignty and recognition as a distinct nation on the world stage.'},
+];
+
+let qIndex=0,qScore=0,answered=[];
+
+function initQuiz(){
+  qIndex=0;qScore=0;
+  answered=new Array(questions.length).fill(null);
+  document.getElementById('q-total').textContent=questions.length;
+  updateScoreDisplay();renderQuestion();
+}
+
+const diffLabels={easy:'<span class="q-difficulty diff-easy">Easy</span>',medium:'<span class="q-difficulty diff-medium">Medium</span>',hard:'<span class="q-difficulty diff-hard">Hard</span>'};
+
+function renderQuestion(){
+  const q=questions[qIndex];
+  document.getElementById('q-current').textContent=qIndex+1;
+  const ua=answered[qIndex];
+  const optsHTML=q.opts.map((opt,i)=>{
+    let cls='option-btn';
+    if(ua!==null){
+      if(i===q.a)cls+=' reveal-correct';
+      if(i===ua&&ua!==q.a)cls+=' incorrect';
+      if(i===ua&&ua===q.a)cls='option-btn correct';
+    }
+    return `<button class="${cls}" onclick="answerQ(${i})" ${ua!==null?'disabled':''}>${opt}</button>`;
+  }).join('');
+  let fbHTML='';
+  if(ua!==null){
+    const ok=ua===q.a;
+    fbHTML=`<div class="feedback ${ok?'correct':'incorrect'}"><div class="fb-correct-ans">${ok?'Correct!':'Incorrect. The correct answer was: '+q.opts[q.a]}</div>${q.exp}</div>`;
+  }
+  document.getElementById('question-area').innerHTML=`<div class="question-card"><div class="q-num">Question ${qIndex+1} of ${questions.length} ${diffLabels[q.d]}</div><div class="q-text">${q.q}</div><div class="options">${optsHTML}</div>${fbHTML}</div>`;
+  document.getElementById('prev-btn').style.display=qIndex>0?'inline-block':'none';
+  document.getElementById('next-btn').style.display=(ua!==null&&qIndex<questions.length-1)?'inline-block':'none';
+  document.getElementById('finish-btn').style.display=(ua!==null&&qIndex===questions.length-1)?'inline-block':'none';
+}
+
+function answerQ(i){
+  if(answered[qIndex]!==null)return;
+  answered[qIndex]=i;
+  if(i===questions[qIndex].a)qScore++;
+  updateScoreDisplay();renderQuestion();
+}
+
+function updateScoreDisplay(){
+  document.getElementById('q-score').textContent=qScore;
+  document.getElementById('q-answered').textContent=answered.filter(a=>a!==null).length;
+}
+
+function qNav(dir){qIndex=Math.max(0,Math.min(questions.length-1,qIndex+dir));renderQuestion();}
+
+function showResults(){
+  const pct=Math.round((qScore/questions.length)*100);
+  let grade,color,msg;
+  if(pct>=92){grade='A+';color='#1e8c4a';msg='Outstanding. You are fully prepared for this test.';}
+  else if(pct>=80){grade='A';color='#1e8c4a';msg='Excellent work. Solid knowledge across all topics.';}
+  else if(pct>=70){grade='B';color='#2563a8';msg='Good effort. Review the questions you got wrong and re-read those topics.';}
+  else if(pct>=60){grade='C';color='#c2710c';msg='Passing, but study harder. Focus on the Study Notes and Short Answer sections.';}
+  else{grade='D';color='#b91c1c';msg='Needs improvement. Go back through the Study Notes and Flashcards before trying again.';}
+
+  document.getElementById('res-score').textContent=`${qScore} / ${questions.length}`;
+  document.getElementById('res-label').textContent=`${pct}% correct`;
+  const gb=document.getElementById('res-grade');
+  gb.textContent=grade;gb.style.background=color;gb.style.color='#fff';gb.style.padding='8px 28px';
+  document.getElementById('res-msg').textContent=msg;
+
+  // Breakdown by difficulty
+  const cats={easy:{correct:0,total:0},medium:{correct:0,total:0},hard:{correct:0,total:0}};
+  questions.forEach((q,i)=>{
+    cats[q.d].total++;
+    if(answered[i]===q.a)cats[q.d].correct++;
+  });
+  let bdHTML='<h4>Performance by Difficulty</h4>';
+  Object.entries(cats).forEach(([d,v])=>{
+    const dp=v.total>0?Math.round((v.correct/v.total)*100):0;
+    const cls=dp>=80?'bi-correct':dp>=60?'':'bi-wrong';
+    bdHTML+=`<div class="breakdown-item"><span style="text-transform:capitalize;">${d}</span><span class="bi-result ${cls}">${v.correct}/${v.total} (${dp}%)</span></div>`;
+  });
+  document.getElementById('res-breakdown').innerHTML=bdHTML;
+
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('results-section').classList.add('active');
+}
+
+function restartQuiz(){show('quiz');}
+
+// Init
+initFlashcards();
+</script>
+</body>
+</html>
